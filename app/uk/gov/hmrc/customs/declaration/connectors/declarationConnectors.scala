@@ -24,7 +24,7 @@ import play.api.mvc.Codec.utf_8
 import uk.gov.hmrc.customs.api.common.config.ServiceConfigProvider
 import uk.gov.hmrc.customs.api.common.logging.CdsLogger
 import uk.gov.hmrc.customs.declaration.config.DeclarationCircuitBreaker
-import uk.gov.hmrc.customs.declaration.http.Non2xxResponseException
+import uk.gov.hmrc.customs.declaration.http.{Non2xxResponseException, A403ResponseException}
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
 import uk.gov.hmrc.customs.declaration.model.ApiVersion
 import uk.gov.hmrc.customs.declaration.model.actionbuilders.ValidatedPayloadRequest
@@ -110,6 +110,9 @@ trait DeclarationConnector extends DeclarationCircuitBreaker with HttpErrorFunct
       response.status match {
         case status if is2xx(status) =>
           response
+
+        case status if status == 403 =>
+          throw new A403ResponseException(status)
 
         case status => //1xx, 3xx, 4xx, 5xx
           logger.error(s"Failed backend call response body=${formatResponseBody(response.body)}")

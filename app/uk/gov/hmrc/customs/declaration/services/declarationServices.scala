@@ -22,12 +22,13 @@ import play.api.mvc.Result
 import uk.gov.hmrc.customs.api.common.controllers.ErrorResponse
 import uk.gov.hmrc.customs.api.common.controllers.ErrorResponse.errorInternalServerError
 import uk.gov.hmrc.customs.declaration.connectors.{ApiSubscriptionFieldsConnector, DeclarationCancellationConnector, DeclarationConnector, DeclarationSubmissionConnector}
+import uk.gov.hmrc.customs.declaration.http.A403ResponseException
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
 import uk.gov.hmrc.customs.declaration.model._
 import uk.gov.hmrc.customs.declaration.model.actionbuilders.ActionBuilderModelHelper._
 import uk.gov.hmrc.customs.declaration.model.actionbuilders._
 import uk.gov.hmrc.customs.declaration.xml.MdgPayloadDecorator
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException}
 
 import java.net.URLEncoder
 import java.time.temporal.ChronoUnit
@@ -131,8 +132,14 @@ trait DeclarationService extends ApiSubscriptionFieldsService {
         logger.error("unhealthy state entered")
         Left(errorResponseServiceUnavailable.XmlResult.withConversationId)
       case NonFatal(e) =>
-        logger.error(s"submission declaration call failed: ${e.getMessage}", e)
-        Left(ErrorResponse.ErrorInternalServerError.XmlResult.withConversationId)
+        e match {
+          case httpException: A403ResponseException =>
+            logger.error(s"submission declaration call failed: ${httpException.getMessage}", httpException)
+            Left(ErrorResponse(403, "PAYLOAD_FORBIDDEN", "Payload Forbidden").XmlResult.withConversationId)
+          case _ =>
+            logger.error(s"submission declaration call failed: ${e.getMessage}", e)
+            Left(ErrorResponse.ErrorInternalServerError.XmlResult.withConversationId)
+        }
     }
   }
 
