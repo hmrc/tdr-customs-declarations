@@ -16,7 +16,6 @@
 
 package util
 
-import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers.{any, eq => ameq}
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -34,6 +33,8 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import scala.concurrent.{ExecutionContext, Future}
 import org.scalatest.matchers.should.Matchers
+
+import java.time.LocalDate
 
 trait AuthConnectorStubbing extends AnyWordSpecLike with GuiceOneAppPerSuite with MockitoSugar with Matchers{
   val mockAuthConnector: AuthConnector = mock[AuthConnector]

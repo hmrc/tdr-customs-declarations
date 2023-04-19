@@ -17,7 +17,6 @@
 package uk.gov.hmrc.customs.declaration.services
 
 import javax.inject.{Inject, Singleton}
-import org.joda.time.LocalDate
 import play.api.http.Status
 import play.api.http.Status.UNAUTHORIZED
 import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
@@ -32,6 +31,8 @@ import uk.gov.hmrc.customs.declaration.model.{Eori, NonCsp, NrsRetrievalData}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.Authorization
 
+import java.time
+import java.time.LocalDate
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Left
 import scala.util.control.NonFatal
@@ -52,7 +53,7 @@ class CustomsAuthService @Inject()(override val authConnector: AuthConnector,
   private type CspRetrievalDataType = Retrieval[NrsRetrievalDataType]
   private type NonCspRetrievalDataType = Retrieval[NrsRetrievalDataType ~ Enrolments]
 
-  private val cspRetrievals: CspRetrievalDataType =
+  private val cspRetrievals: Retrieval[Option[String] ~ Option[String] ~ Option[String] ~ Option[Credentials] ~ ConfidenceLevel ~ Option[String] ~ Option[String] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~ AgentInformation ~ Option[String] ~ Option[CredentialRole] ~ Option[MdtpInformation] ~ Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress] ~ Option[AffinityGroup] ~ Option[String] ~ LoginTimes] =
     Retrievals.internalId and Retrievals.externalId and Retrievals.agentCode and
       Retrievals.credentials and Retrievals.confidenceLevel and Retrievals.nino and
       Retrievals.saUtr and Retrievals.name and Retrievals.dateOfBirth and
