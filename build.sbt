@@ -88,7 +88,7 @@ def unitTestFilter(name: String): Boolean = name startsWith "unit"
 
 scalastyleConfig := baseDirectory.value / "project" / "scalastyle-config.xml"
 
-val compileDependencies = Seq(customsApiCommon, hmrcMongo, playJsonJoda)
+val compileDependencies = Seq(customsApiCommon, hmrcMongo)
 
 val testDependencies = Seq(scalaTestPlusPlay, flexmark, wireMock, mockito, customsApiCommonTests, hmrcMongoTest)
 

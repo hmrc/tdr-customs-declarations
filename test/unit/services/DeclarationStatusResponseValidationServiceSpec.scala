@@ -27,8 +27,8 @@ import uk.gov.hmrc.customs.declaration.services.{DeclarationsConfigService, Stat
 import util.StatusTestXMLData._
 import util.TestData.{badgeIdentifier, invalidBadgeIdentifier}
 
-import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.time.{Instant, ZonedDateTime}
 import scala.xml.{Elem, NodeSeq}
 
 class DeclarationStatusResponseValidationServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
@@ -69,14 +69,14 @@ class DeclarationStatusResponseValidationServiceSpec extends AnyWordSpecLike wit
     }
 
     "return Right of true when badgeIdentifiers match and creation date is within configured allowed period" in new SetUp() {
-      val dateWithinPeriod = Instant.now().minus(statusRequestDaysInsideLimit, ChronoUnit.DAYS)
+      val dateWithinPeriod = ZonedDateTime.now().minus(statusRequestDaysInsideLimit, ChronoUnit.DAYS).toInstant
       val xmlBody: NodeSeq = generateDeclarationStatusResponse(dateWithinPeriod, populateAcceptanceDate = false, ImportTradeMovementType, InValidProcedureCategory)
       val result: Either[ErrorResponse, Boolean] = service.validate(xmlBody, badgeIdentifier)
       result shouldBe Right(true)
     }
 
     "return Left of Invalid Date ErrorResponse when badgeIdentifiers match and creation date is outside configured allowed period" in new SetUp() {
-      val dateWithinPeriod = Instant.now().minus(statusRequestDaysOutsideLimit, ChronoUnit.DAYS)
+      val dateWithinPeriod = ZonedDateTime.now().minus(statusRequestDaysOutsideLimit, ChronoUnit.DAYS).toInstant
       val result: Either[ErrorResponse, Boolean] = service.validate(generateDeclarationStatusResponse(dateWithinPeriod,populateAcceptanceDate = false, ImportTradeMovementType, InValidProcedureCategory), badgeIdentifier)
       result.left.get.message shouldBe invalidCreationDateErrorResponse.message
     }
@@ -216,6 +216,8 @@ class DeclarationStatusResponseValidationServiceSpec extends AnyWordSpecLike wit
 
     def testServiceErrors(service: StatusResponseValidationService, xmlResponse: Elem, badgeIdentifier: BadgeIdentifier, errorResponse: ErrorResponse){
       val result: Either[ErrorResponse, Boolean] = service.validate(invalidStatusResponse(xmlResponse), badgeIdentifier)
+      println( "--------"+result)
+      println( "xml --------" + result.left.get.message)
       result.left.get.message shouldBe errorResponse.message
     }
 

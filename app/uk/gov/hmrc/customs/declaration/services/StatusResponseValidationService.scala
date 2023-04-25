@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.customs.declaration.services
 
-import javax.inject.{Inject, Singleton}
-import org.joda.time.format.{DateTimeFormatter, ISODateTimeFormat}
-import org.joda.time.{DateTime, DateTimeZone}
 import uk.gov.hmrc.customs.api.common.controllers.ErrorResponse
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
 import uk.gov.hmrc.customs.declaration.model.BadgeIdentifier
 
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import javax.inject.{Inject, Singleton}
 import scala.util.Try
 import scala.xml.NodeSeq
 
@@ -36,13 +37,15 @@ class StatusResponseValidationService @Inject() (declarationsLogger: Declaration
   val importProcedureCategories: Seq[String] = Seq( "40", "42", "61", "07", "51", "53", "71")
   val exportProcedureCategories: Seq[String] = Seq( "10")
 
-  val ISO_UTC_DateTimeFormat_noMillis: DateTimeFormatter = ISODateTimeFormat.dateTime.withZoneUTC()
+//  val ISO_UTC_DateTimeFormat_noMillis: DateTimeFormatter = ISODateTimeFormat.dateTime.withZoneUTC()
+  val ISO_UTC_DateTimeFormat_noMillis: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
   def validate(xml: NodeSeq, badgeIdentifier: BadgeIdentifier): Either[ErrorResponse, Boolean] = {
     val declarationNode = xml \ "responseDetail" \ "declarationManagementInformationResponse" \ "declaration"
+
     val theResult =  for {
-      tradeMovementType <- extractTradeMovementType(declarationNode).right
-      xmlNode <- handleValidationForTradeTypes(badgeIdentifier, tradeMovementType, declarationNode).right
+      tradeMovementType <- extractTradeMovementType(declarationNode)
+      xmlNode <- handleValidationForTradeTypes(badgeIdentifier, tradeMovementType, declarationNode)
     } yield xmlNode
     theResult
   }
@@ -56,8 +59,8 @@ class StatusResponseValidationService @Inject() (declarationsLogger: Declaration
 
   private def validateImports(badgeIdentifier: BadgeIdentifier, declarationNode: NodeSeq): Either[ErrorResponse, Boolean] = {
     val result: Either[ErrorResponse, Boolean] = for {
-      _ <- validateBadgeIdentifier(declarationNode, badgeIdentifier).right
-      _ <- validateAcceptanceDate(declarationNode).right
+      _ <- validateBadgeIdentifier(declarationNode, badgeIdentifier)
+      _ <- validateAcceptanceDate(declarationNode)
     } yield true
     result
   }
@@ -80,7 +83,11 @@ class StatusResponseValidationService @Inject() (declarationsLogger: Declaration
     declarationsLogger.errorWithoutRequestContext("Status response acceptanceDate field is missing")
     validateCreationDate(declarationNode)
   })(acceptanceDate => {
-    val parsedDateTime = Try(ISO_UTC_DateTimeFormat_noMillis.parseDateTime(acceptanceDate.head)).toOption
+//    val parsedDateTime = Try(ISO_UTC_DateTimeFormat_noMillis.parseDateTime(acceptanceDate.head)).toOption
+    val parsedDateTime = Try(ZonedDateTime.parse((acceptanceDate.head), DateTimeFormatter.ISO_OFFSET_DATE_TIME).truncatedTo(ChronoUnit.SECONDS)).toOption
+
+      println(parsedDateTime)
+
     val isDateValid = parsedDateTime.fold(
       {
         declarationsLogger.errorWithoutRequestContext(s"Unable to parse acceptance date time: ${acceptanceDate.head}")
@@ -100,7 +107,11 @@ class StatusResponseValidationService @Inject() (declarationsLogger: Declaration
       declarationsLogger.errorWithoutRequestContext("Status response creationDate field is missing")
       Left(ErrorResponse.errorBadRequest("Declaration acceptanceDate and creationDate fields are missing"))
     })(creationDate => {
-      val parsedDateTime = Try(ISO_UTC_DateTimeFormat_noMillis.parseDateTime(creationDate.head)).toOption
+
+      println("creation Date" + creationDate)
+//      val parsedDateTime = Try(ISO_UTC_DateTimeFormat_noMillis.parseDateTime(creationDate.head)).toOption
+      val parsedDateTime = Try(ZonedDateTime.parse((creationDate.head), DateTimeFormatter.ISO_OFFSET_DATE_TIME)).toOption
+
       val isDateValid = parsedDateTime.fold(
         {
           declarationsLogger.errorWithoutRequestContext(s"Unable to parse creation date time: ${creationDate.head}")
@@ -170,7 +181,8 @@ class StatusResponseValidationService @Inject() (declarationsLogger: Declaration
   }
 
   private def getValidDateTimeUsingConfig = {
-    DateTime.now(DateTimeZone.UTC).minusDays(declarationsConfigService.declarationsConfig.declarationStatusRequestDaysLimit)
+//    DateTime.now(DateTimeZone.UTC).minusDays(declarationsConfigService.declarationsConfig.declarationStatusRequestDaysLimit)
+    ZonedDateTime.now().minus(declarationsConfigService.declarationsConfig.declarationStatusRequestDaysLimit, ChronoUnit.DAYS)
   }
 
   private def extractField(declarationNode: NodeSeq, nodeName: String): Option[scala.collection.Seq[String]] = {
