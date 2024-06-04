@@ -1,0 +1,133 @@
+@import play.api.libs.json.Json
+
+@(  v2Enabled: Boolean,
+    v3Enabled: Boolean
+ )
+
+{
+  "scopes": [
+    {
+      "key": "write:customs-declaration",
+      "name": "Submit a Customs Declaration",
+      "description": "Submit a Customs Declaration"
+    }
+  ],
+  "api": {
+    "name": "Customs Declarations",
+    "description": "Single WCO-compliant Customs Declarations API",
+    "context": "customs/declarations",
+    "versions": [
+      {
+        "version": "1.0",
+        "status": "BETA",
+        "endpointsEnabled": true,
+        "access": {
+            "type": "PRIVATE"
+        },
+        "fieldDefinitions": [
+          {
+            "name": "callbackUrl",
+            "description": "What's your callback URL for declaration submissions?",
+            "type": "URL",
+            "hint": "This is how we'll notify you when we've processed them. It must include https and port 443",
+            "shortDescription" : "Callback URL",
+            "validation" : {
+              "errorMessage" : "Enter a URL in the correct format, like 'https://your.domain.name/some/path' ",
+              "rules" : [{
+                "UrlValidationRule" : {}
+              }]
+            }
+          },
+          {
+            "name": "securityToken",
+            "description": "What's the value of the HTTP Authorization header we should use to notify you?",
+            "type": "SecureToken",
+            "hint": "For example: Basic YXNkZnNhZGZzYWRmOlZLdDVOMVhk",
+            "shortDescription" : "Authorization Token"
+          },
+          {
+            "name": "authenticatedEori",
+            "description": "What's your Economic Operator Registration and Identification (EORI) number?",
+            "type": "STRING",
+            "hint": "This is your EORI that will associate your application with you as a CSP",
+            "shortDescription" : "EORI"
+          }
+        ]
+      },
+      {
+        "version": "2.0",
+        "status": "BETA",
+        "endpointsEnabled": @v2Enabled,
+        "access": {
+            "type": "PRIVATE"
+        },
+        "fieldDefinitions": [
+          {
+            "name": "callbackUrl",
+            "description": "What's your callback URL for declaration submissions?",
+            "type": "URL",
+            "hint": "This is how we'll notify you when we've processed them. It must include https and port 443",
+            "shortDescription" : "Callback URL",
+            "validation" : {
+              "errorMessage" : "Enter a URL in the correct format, like 'https://your.domain.name/some/path' ",
+              "rules" : [{
+                "UrlValidationRule" : {}
+              }]
+            }
+          },
+          {
+            "name": "securityToken",
+            "description": "What's the value of the HTTP Authorization header we should use to notify you?",
+            "type": "SecureToken",
+            "hint": "For example: Basic YXNkZnNhZGZzYWRmOlZLdDVOMVhk",
+            "shortDescription" : "Authorization Token"
+          },
+          {
+            "name": "authenticatedEori",
+            "description": "What's your Economic Operator Registration and Identification (EORI) number?",
+            "type": "STRING",
+            "hint": "This is your EORI that will associate your application with you as a CSP",
+            "shortDescription" : "EORI"
+          }
+        ]
+      },
+      {
+        "version": "3.0",
+        "status": "BETA",
+        "endpointsEnabled": @v3Enabled,
+        "access": {
+            "type": "PRIVATE"
+        },
+        "fieldDefinitions": [
+          {
+            "name": "callbackUrl",
+            "description": "What's your callback URL for declaration submissions?",
+            "type": "URL",
+            "hint": "This is how we'll notify you when we've processed them. It must include https and port 443",
+            "shortDescription" : "Callback URL",
+            "validation" : {
+              "errorMessage" : "Enter a URL in the correct format, like 'https://your.domain.name/some/path' ",
+              "rules" : [{
+                "UrlValidationRule" : {}
+              }]
+            }
+          },
+          {
+            "name": "securityToken",
+            "description": "What's the value of the HTTP Authorization header we should use to notify you?",
+            "type": "SecureToken",
+            "hint": "For example: Basic YXNkZnNhZGZzYWRmOlZLdDVOMVhk",
+            "shortDescription" : "Authorization Token"
+          },
+          {
+            "name": "authenticatedEori",
+            "description": "What's your Economic Operator Registration and Identification (EORI) number?",
+            "type": "STRING",
+            "hint": "This is your EORI that will associate your application with you as a CSP",
+            "shortDescription" : "EORI"
+          }
+        ]
+      }
+    ]
+  }
+}

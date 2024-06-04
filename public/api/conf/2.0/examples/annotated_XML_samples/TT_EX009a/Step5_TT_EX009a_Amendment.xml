@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<md:MetaData xmlns:md="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2"
+             xmlns="urn:wco:datamodel:WCO:DEC-DMS:2"
+             xmlns:clm63055="urn:un:unece:uncefact:codelist:standard:UNECE:AgencyIdentificationCode:D12B"
+             xmlns:ds="urn:wco:datamodel:WCO:MetaData_DS-DMS:2"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2 ../DocumentMetaData_2_DMS.xsd ">
+	<md:WCODataModelVersionCode>3.6</md:WCODataModelVersionCode>
+	<md:WCOTypeName>DEC</md:WCOTypeName>
+	<md:ResponsibleCountryCode>GB</md:ResponsibleCountryCode>
+	<md:ResponsibleAgencyName>HMRC</md:ResponsibleAgencyName>
+	<md:AgencyAssignedCustomizationVersionCode>v2.1
+      </md:AgencyAssignedCustomizationVersionCode>
+	<Declaration xmlns:clm5ISO42173A="urn:un:unece:uncefact:codelist:standard:ISO:ISO3AlphaCurrencyCode:2012-08-31"
+	             xmlns:p1="urn:wco:datamodel:WCO:Declaration_DS:DMS:2"
+	             xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:6"
+	             xsi:schemaLocation="urn:wco:datamodel:WCO:DEC-DMS:2 ../WCO_DEC_2_DMS.xsd ">
+		<FunctionCode>13</FunctionCode>
+		<FunctionalReferenceID>7867523Y8OFA</FunctionalReferenceID>
+		<ID>24GB0YVJ3EXXES8AA0</ID>
+		<TypeCode>COR</TypeCode>
+		<AdditionalInformation>
+			<StatementDescription>Amending Status code on licence to EP</StatementDescription>
+			<StatementTypeCode>AES</StatementTypeCode>
+			<Pointer>
+				<SequenceNumeric>1</SequenceNumeric>
+				<DocumentSectionCode>42A</DocumentSectionCode>
+			</Pointer>
+			<Pointer>
+				<SequenceNumeric>1</SequenceNumeric>
+				<DocumentSectionCode>06A</DocumentSectionCode>
+			</Pointer>
+		</AdditionalInformation>
+		<Amendment>
+			<ChangeReasonCode>25</ChangeReasonCode>
+			<Pointer>
+				<SequenceNumeric>1</SequenceNumeric>
+				<DocumentSectionCode>42A</DocumentSectionCode>
+			</Pointer>
+			<Pointer>
+				<SequenceNumeric>1</SequenceNumeric>
+				<DocumentSectionCode>67A</DocumentSectionCode>
+			</Pointer>
+			<Pointer>
+				<SequenceNumeric>1</SequenceNumeric>
+				<DocumentSectionCode>68A</DocumentSectionCode>
+			</Pointer>
+			<Pointer>
+				<SequenceNumeric>1</SequenceNumeric>
+				<DocumentSectionCode>02A</DocumentSectionCode>
+				<TagID>360</TagID>
+			</Pointer>
+		</Amendment>
+		<GoodsShipment>
+			<GovernmentAgencyGoodsItem>
+				<SequenceNumeric>1</SequenceNumeric>
+				<AdditionalDocument>
+					<CategoryCode>X</CategoryCode>
+					<ID>GBSIEE2E350002-0001</ID>
+					<Name>Dual use export authorisation </Name>
+					<TypeCode>002</TypeCode>
+					<LPCOExemptionCode>EP</LPCOExemptionCode>
+					<WriteOff>
+						<QuantityQuantity unitCode="KGM#G">10.00</QuantityQuantity>
+					</WriteOff>
+				</AdditionalDocument>
+				<!--<Commodity>
+                                <InvoiceLine>
+                                    <ItemChargeAmount currencyID="GBP">999</ItemChargeAmount>
+                                </InvoiceLine>
+                           </Commodity> -->
+			</GovernmentAgencyGoodsItem>
+		</GoodsShipment>
+	</Declaration>
+</md:MetaData>
