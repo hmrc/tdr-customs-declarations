@@ -13,7 +13,7 @@ As the notification process is asynchronous the only response to the declarant f
 
 ## Development Setup
 - This microservice requires mongoDB 4.+
-- Run locally: `sbt run` which runs on port `9820` by default
+- Run locally: `sbt run` which runs on port `5550` by default
 - Run with test endpoints: `sbt 'run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes'`
 
 ##  Service Manager Profiles
