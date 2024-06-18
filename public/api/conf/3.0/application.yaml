@@ -6,7 +6,7 @@ info:
     
     You can download the following zipped archive, which contains XML schemas and examples of the request and response payloads for each of the API endpoints:
     
-    [Schemas and example messages](/api-documentation/docs/api/download/customs-declarations/3.0/wco-declaration-schemas.zip)
+    [Schemas and example messages](/api-documentation/docs/api/download/tdr-customs-declarations/3.0/wco-declaration-schemas.zip)
     
     ZIP, 3.1MB last updated 16/05/2024
   contact: {}
@@ -796,7 +796,7 @@ paths:
 
 
 
-        *Use the [Customs Declarations Information API](/api-documentation/docs/api/service/customs-declarations-information) instead.*
+        *Use the [Customs Declarations Information API](/api-documentation/docs/api/service/tdr-customs-declarations-information) instead.*
 
 
 

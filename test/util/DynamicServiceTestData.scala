@@ -44,7 +44,7 @@ trait DynamicServiceTestData {
     configure(
       Map(
         "play.http.router" -> "dynamicservice.Routes",
-        "appName" -> "customs-declarations",
+        "appName" -> "tdr-customs-declarations",
         s"microservice.services.$validService.host" -> validServiceHost,
         s"microservice.services.$validService.port" -> validServicePort,
         s"microservice.services.$validService.context" -> validServiceContext,

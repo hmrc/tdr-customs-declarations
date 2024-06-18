@@ -42,16 +42,16 @@ To run performance tests, see [here](https://github.com/hmrc/customs-declaration
 For Customs Declarations API documentation, see [here](https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/customs-declarations).
 
 ### Customs Declarations specific routes
-| Path - internal routes prefixed by `/customs-declarations`                                            | Supported Methods | Description                                                           |
-|-------------------------------------------------------------------------------------------------------|:-----------------:|-----------------------------------------------------------------------|
-| `/customs-declarations/`                                                                              |       POST        | Endpoint to submit a declaration.                                     |
-| `/customs-declarations/cancellation-requests`                                                         |       POST        | Endpoint to cancel a declaration.                                     |
-| `/customs-declarations/amend`                                                                         |       POST        | Endpoint to amend a declaration.                                      |
-| `/customs-declarations/file-upload  `                                                                 |       POST        | Endpoint to submit a file upload.                                     |
-| `/customs-declarations/uploaded-file-upscan-notifications/clientSubscriptionId/:clientSubscriptionId` |       POST        | Endpoint to manage file upload upscan notifications.                  |
-| `/customs-declarations/file-transmission-notify/clientSubscriptionId/:clientSubscriptionId`           |       POST        | Endpoint to submit file upload notifications to customs notification. |
-| `/customs-declarations/arrival-notification`                                                          |       POST        | Endpoint to submit an arrival notification declaration.               |
-| `/customs-declarations/status-request/mrn/:mrn`                                                       |        GET        | Endpoint to retrieve the status of a declaration.                     |
+| Path - internal routes prefixed by `/tdr-customs-declarations`                                            | Supported Methods | Description                                                           |
+|-----------------------------------------------------------------------------------------------------------|:-----------------:|-----------------------------------------------------------------------|
+| `/tdr-customs-declarations/`                                                                              |       POST        | Endpoint to submit a declaration.                                     |
+| `/tdr-customs-declarations/cancellation-requests`                                                         |       POST        | Endpoint to cancel a declaration.                                     |
+| `/tdr-customs-declarations/amend`                                                                         |       POST        | Endpoint to amend a declaration.                                      |
+| `/tdr-customs-declarations/file-upload  `                                                                 |       POST        | Endpoint to submit a file upload.                                     |
+| `/tdr-customs-declarations/uploaded-file-upscan-notifications/clientSubscriptionId/:clientSubscriptionId` |       POST        | Endpoint to manage file upload upscan notifications.                  |
+| `/tdr-customs-declarations/file-transmission-notify/clientSubscriptionId/:clientSubscriptionId`           |       POST        | Endpoint to submit file upload notifications to customs notification. |
+| `/tdr-customs-declarations/arrival-notification`                                                          |       POST        | Endpoint to submit an arrival notification declaration.               |
+| `/tdr-customs-declarations/status-request/mrn/:mrn`                                                       |        GET        | Endpoint to retrieve the status of a declaration.                     |
 
 ### Test-only specific routes
 | Path                         | Supported Methods | Description                                  |
@@ -103,7 +103,7 @@ window paste the following, one after the other.
         }
     )
     
-When you then send a request to `customs-declarations` make sure you have the HTTP header `X-Client-ID` with the value `d65f2252-9fcf-4f04-9445-5971021226bb`
+When you then send a request to `tdr-customs-declarations` make sure you have the HTTP header `X-Client-ID` with the value `d65f2252-9fcf-4f04-9445-5971021226bb`
 
 # Multiple wco-dec services - config switching based on ACCEPT header
 
@@ -129,8 +129,8 @@ switching of the endpoint there must be a corresponding section in the applicati
 
 
 ## Example
-The service `customs-declarations` has a `default` configuration and a `stub` configuration. Note
-that `default` configuration is declared directly inside the `customs-declarations` section.
+The service `tdr-customs-declarations` has a `default` configuration and a `stub` configuration. Note
+that `default` configuration is declared directly inside the `tdr-customs-declarations` section.
 
     Prod {
         ...
@@ -173,37 +173,37 @@ that `default` configuration is declared directly inside the `customs-declaratio
 
 #### REQUEST
     default version (application/vnd.hmrc.1.0+xml):
-    curl -X "POST" http://customs-declarations-host/test-only/service/wco-declaration/configuration -H 'content-type: application/json' -d '{ "environment": "stub" }'
+    curl -X "POST" http://tdr-customs-declarations-host/test-only/service/wco-declaration/configuration -H 'content-type: application/json' -d '{ "environment": "stub" }'
     
     version 2 (application/vnd.hmrc.2.0+xml):
-    curl -X "POST" http://customs-declarations-host/test-only/service/v2.wco-declaration/configuration -H 'content-type: application/json' -d '{ "environment": "stub" }'
+    curl -X "POST" http://tdr-customs-declarations-host/test-only/service/v2.wco-declaration/configuration -H 'content-type: application/json' -d '{ "environment": "stub" }'
 
 #### RESPONSE
 
-    The service customs-declarations is now configured to use the stub environment
+    The service tdr-customs-declarations is now configured to use the stub environment
 
 ### Switch service configuration to default for an endpoint
 
 #### REQUEST
 
-    curl -X "POST" http://customs-declarations-host/test-only/service/wco-declaration/configuration -H 'content-type: application/json' -d '{ "environment": "default" }'
+    curl -X "POST" http://tdr-customs-declarations-host/test-only/service/wco-declaration/configuration -H 'content-type: application/json' -d '{ "environment": "default" }'
 
 #### RESPONSE
 
-    The service customs-declarations is now configured to use the default environment
+    The service tdr-customs-declarations is now configured to use the default environment
 
 ### Get the current configuration for a service
 
 #### REQUEST
 
-    curl -X "GET" http://customs-declarations-host/test-only/service/wco-declaration/configuration
+    curl -X "GET" http://tdr-customs-declarations-host/test-only/service/wco-declaration/configuration
 
 #### RESPONSE
 
     {
       "service": "wco-declaration",
       "environment": "stub",
-      "url": "http://currenturl/customs-declarations"
+      "url": "http://currenturl/tdr-customs-declarations"
       "bearerToken": "current token"
     }
 

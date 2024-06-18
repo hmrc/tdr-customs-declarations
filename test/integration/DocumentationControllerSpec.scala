@@ -40,7 +40,7 @@ class DocumentationControllerSpec extends IntegrationTestSpec with MockitoSugar 
       Map(
         "play.http.router" -> "definition.Routes",
         "application.logger.name" -> "customs-api-common",
-        "appName" -> "customs-declarations",
+        "appName" -> "tdr-customs-declarations",
         "appUrl" -> "http://customs-wco-declaration.service",
         "auditing.enabled" -> false,
         "auditing.traceRequests" -> false
