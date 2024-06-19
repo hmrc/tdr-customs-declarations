@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import scala.language.postfixOps
 
-name := "customs-declarations"
+name := "tdr-customs-declarations"
 scalaVersion := "2.13.14"
 targetJvm := "jvm-11"
 
@@ -43,7 +43,7 @@ lazy val microservice = (project in file("."))
     scoverageSettings
   )
   .settings(majorVersion := 0)
-  .settings(playDefaultPort := 9820)
+  .settings(playDefaultPort := 5550)
 
 def onPackageName(rootPackage: String): String => Boolean = {
   testName => testName startsWith rootPackage

@@ -98,7 +98,7 @@ class FileUploadUpscanNotificationSpec extends ComponentTestSpec with ExpectedTe
       requestHeaders.get(CONTENT_TYPE) shouldBe Some("application/json")
 
       And("The User Agent header is application/json")
-      requestHeaders.get(USER_AGENT) shouldBe Some("customs-declarations")
+      requestHeaders.get(USER_AGENT) shouldBe Some("tdr-customs-declarations")
 
       And("The request json payload contains details of the success outcome")
       Json.parse(requestPayload) shouldBe Json.parse(expectedFileTransmissionRequest)

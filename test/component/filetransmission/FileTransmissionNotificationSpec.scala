@@ -110,8 +110,8 @@ class FileTransmissionNotificationSpec extends ComponentTestSpec with ExpectedTe
       And("The Accept header is application/xml")
       requestHeaders.get(ACCEPT) shouldBe Some("application/xml")
 
-      And("The User-Agent header is customs-declarations")
-      requestHeaders.get(USER_AGENT) shouldBe Some("customs-declarations")
+      And("The User-Agent header is tdr-customs-declarations")
+      requestHeaders.get(USER_AGENT) shouldBe Some("tdr-customs-declarations")
 
       And("The request XML payload contains details of the scan outcome")
       trim(stringToXml(requestPayload)) shouldBe trim(FileTransmissionSuccessCustomsNotificationXml)
