@@ -7,9 +7,9 @@
     }
   ],
   "api": {
-    "name": "Customs UCC Declaration",
-    "description": "Single UCC Compliant Declaration API",
-    "context": "customs-wco",
+    "name": "TDR Customs UCC Declaration",
+    "description": "Single UCC Compliant Declaration API for TDR",
+    "context": "tdr-customs-wco",
     "versions": [
       {
         "version": "1.0",
