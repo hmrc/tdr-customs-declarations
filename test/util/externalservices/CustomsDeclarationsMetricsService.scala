@@ -48,7 +48,7 @@ trait CustomsDeclarationsMetricsService extends WireMockRunner {
       postRequestedFor(urlMatchingRequestPath)
         .withHeader(ACCEPT, equalTo(JSON))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
-        .withRequestBody(containing(Json.toJson(request).toString))
+        .withRequestBody(equalToJson(Json.toJson(request).toString()))
     )
   }
 

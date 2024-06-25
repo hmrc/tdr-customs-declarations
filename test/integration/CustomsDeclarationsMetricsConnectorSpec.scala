@@ -70,7 +70,7 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
     "make a correct request" in {
       setupCustomsDeclarationsMetricsServiceToReturn()
 
-      val response: Unit = sendValidRequest()
+      val response: Unit = sendValidRequest().futureValue
 
       response shouldBe (() : Unit)
       verifyCustomsDeclarationsMetricsServiceWasCalledWith(ValidCustomsDeclarationsMetricsRequest)
