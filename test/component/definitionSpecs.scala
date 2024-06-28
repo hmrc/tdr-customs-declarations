@@ -55,9 +55,9 @@ class DefinitionSpecWithAllVersionsEnabledByDefault extends ComponentTestSpec wi
           |    }
           |  ],
           |  "api": {
-          |    "name": "Customs Declarations",
-          |    "description": "Single WCO-compliant Customs Declarations API",
-          |    "context": "customs/declarations",
+          |    "name": "TDR Customs Declarations",
+          |    "description": "Single WCO-compliant Customs Declarations API for TDR",
+          |    "context": "tdr/customs/declarations",
           |    "versions": [
           |      {
           |        "version": "1.0",
@@ -210,9 +210,9 @@ class DefinitionSpecWithVersion2Disabled extends ComponentTestSpec with Matchers
           |    }
           |  ],
           |  "api": {
-          |    "name": "Customs Declarations",
-          |    "description": "Single WCO-compliant Customs Declarations API",
-          |    "context": "customs/declarations",
+          |    "name": "TDR Customs Declarations",
+          |    "description": "Single WCO-compliant Customs Declarations API for TDR",
+          |    "context": "tdr/customs/declarations",
           |    "versions": [
           |      {
           |        "version": "1.0",
