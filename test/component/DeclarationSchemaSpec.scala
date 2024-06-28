@@ -60,13 +60,11 @@ class DeclarationSchemaSpec extends ComponentTestSpec
       val request = ValidSubmission_13_INV_Request.fromCsp.postTo(endpoint)
       When("a POST request with data is sent to the API")
       val result: Future[Result] = route(app = app, request).value
-      implicit val timeout: Timeout = Timeout(10.seconds)
 
       Then(s"a response with a 202 status is received")
-      contentAsString(result)(timeout = timeout) should be (empty)
-
-      status(result)(timeout = timeout) shouldBe ACCEPTED
-      headers(result)(timeout = timeout).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
+      contentAsString(result) should be (empty)
+      status(result) shouldBe ACCEPTED
+      headers(result).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
     }
 
     Scenario("Response status 202 when authorised as CSP with privileged application and submits function code 13 in the request") {
@@ -78,11 +76,10 @@ class DeclarationSchemaSpec extends ComponentTestSpec
 
       When("a POST request with data is sent to the API")
       val result: Future[Result] = route(app = app, request).value
-      implicit val timeout: Timeout = Timeout(10.seconds)
 
       Then("a response with a 202 (ACCEPTED) status is received")
-      status(result)(timeout = timeout) shouldBe ACCEPTED
-      contentAsString(result)(timeout = timeout) should be (empty)
+      status(result) shouldBe ACCEPTED
+      contentAsString(result) should be (empty)
     }
 
     Scenario("Response status 202 when authorised as CSP with privileged application and submits type code INV in the request") {
@@ -94,11 +91,10 @@ class DeclarationSchemaSpec extends ComponentTestSpec
 
       When("a POST request with data is sent to the API")
       val resultFuture: Future[Result] = route(app = app, request).value
-      implicit val timeout: Timeout = Timeout(10.seconds)
 
       Then("a response with a 202 (ACCEPTED) status is received")
-      status(resultFuture)(timeout = timeout) shouldBe ACCEPTED
-      headers(resultFuture)(timeout = timeout).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
+      status(resultFuture)shouldBe ACCEPTED
+      headers(resultFuture).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
     }
 
     Scenario("Response status 202 when function code 13 is in the request") {
@@ -107,11 +103,10 @@ class DeclarationSchemaSpec extends ComponentTestSpec
 
       When("a POST request with data is sent to the API")
       val result: Future[Result] = route(app = app, request).value
-      implicit val timeout: Timeout = Timeout(10.seconds)
 
       Then("a response with a 202 (ACCEPTED) status is received")
-      status(result)(timeout = timeout) shouldBe ACCEPTED
-      contentAsString(result)(timeout = timeout) should be (empty)
+      status(result) shouldBe ACCEPTED
+      contentAsString(result) should be (empty)
     }
 
 
@@ -121,14 +116,11 @@ class DeclarationSchemaSpec extends ComponentTestSpec
 
       When("a POST request with data is sent to the API")
       val result: Future[Result] = route(app = app, request).value
-      implicit val timeout: Timeout = Timeout(10.seconds)
 
       Then(s"a response with a 202 status is received")
-      contentAsString(result)(timeout = timeout) should be (empty)
-
-
-      status(result)(timeout = timeout) shouldBe ACCEPTED
-      headers(result)(timeout = timeout).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
+      contentAsString(result)should be (empty)
+      status(result) shouldBe ACCEPTED
+      headers(result).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
     }
   }
 
