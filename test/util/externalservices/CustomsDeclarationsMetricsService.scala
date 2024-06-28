@@ -42,6 +42,7 @@ trait CustomsDeclarationsMetricsService extends WireMockRunner {
     )
   }
 
+
   def verifyCustomsDeclarationsMetricsServiceWasCalledWith(request: CustomsDeclarationsMetricsRequest): Unit = {
     verify(
       1,
