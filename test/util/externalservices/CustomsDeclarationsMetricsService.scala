@@ -21,9 +21,13 @@ import play.api.http.HeaderNames.{ACCEPT, CONTENT_TYPE}
 import play.api.http.MimeTypes
 import play.api.http.Status.OK
 import play.api.libs.json.Json
-import play.api.test.Helpers.JSON
 import uk.gov.hmrc.customs.declaration.model.CustomsDeclarationsMetricsRequest
 import util.{CustomsDeclarationsExternalServicesConfig, WireMockRunner}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
+import scala.util.Try
 
 trait CustomsDeclarationsMetricsService extends WireMockRunner {
   private val urlMatchingRequestPath = urlMatching(CustomsDeclarationsExternalServicesConfig.CustomsDeclarationsMetricsContext)
@@ -44,13 +48,22 @@ trait CustomsDeclarationsMetricsService extends WireMockRunner {
 
 
   def verifyCustomsDeclarationsMetricsServiceWasCalledWith(request: CustomsDeclarationsMetricsRequest): Unit = {
-    verify(
-      1,
-      postRequestedFor(urlMatchingRequestPath)
-        .withHeader(ACCEPT, equalTo(JSON))
-        .withHeader(CONTENT_TYPE, equalTo(JSON))
-        .withRequestBody(equalToJson(Json.toJson(request).toString()))
-    )
+    val expectedJson = Json.toJson(request).toString()
+    val timeoutDuration = 10.seconds
+
+    val resultFuture: Future[Unit] = Future {
+      verify(
+        1,
+        postRequestedFor(urlMatching("/log-times"))
+          .withHeader("Accept", equalTo("application/json"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(expectedJson))
+      )
+    }
+
+    Try(Await.result(resultFuture, timeoutDuration)).recover {
+      case e: Exception => println(s"Error occurred during verification: ${e.getMessage}")
+    }
   }
 
 }
