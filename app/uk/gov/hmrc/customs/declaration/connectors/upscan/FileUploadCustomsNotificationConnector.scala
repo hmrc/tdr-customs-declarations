@@ -24,12 +24,13 @@ import uk.gov.hmrc.customs.declaration.logging.CdsLogger
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
 import uk.gov.hmrc.customs.declaration.services.upscan.FileUploadCustomsNotification
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions, HttpException, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpErrorFunctions, HttpException, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileUploadCustomsNotificationConnector @Inject()(http: HttpClient,
+class FileUploadCustomsNotificationConnector @Inject()(http: HttpClientV2,
                                                        logger: CdsLogger,
                                                        config: DeclarationsConfigService)
                                                       (implicit ec: ExecutionContext) extends HttpErrorFunctions {
@@ -39,16 +40,16 @@ class FileUploadCustomsNotificationConnector @Inject()(http: HttpClient,
 
   def send(notification: FileUploadCustomsNotification): Future[Unit] = {
 
-    val headers: Map[String, String] = Map(
-      "X-CDS-Client-ID" -> notification.clientSubscriptionId.toString,
-      "X-Conversation-ID" -> notification.conversationId.toString,
-      CONTENT_TYPE -> s"${MimeTypes.XML}; charset=UTF-8",
-      ACCEPT -> MimeTypes.XML,
-      AUTHORIZATION -> s"Basic ${config.declarationsConfig.customsNotificationBearerToken}")
-
     val url = config.declarationsConfig.customsNotificationBaseBaseUrl
 
-    http.POSTString[HttpResponse](url, XMLHeader + notification.payload.toString(), headers.toSeq).map { response =>
+    http.post(url"$url")
+      .withBody(XMLHeader + notification.payload.toString())
+      .setHeader("X-CDS-Client-ID" -> notification.clientSubscriptionId.toString)
+      .setHeader("X-Conversation-ID" -> notification.conversationId.toString)
+      .setHeader(CONTENT_TYPE -> s"${MimeTypes.XML}; charset=UTF-8")
+      .setHeader(ACCEPT -> MimeTypes.XML)
+      .setHeader(AUTHORIZATION -> s"Basic ${config.declarationsConfig.customsNotificationBearerToken}")
+      .execute[HttpResponse].map { response =>
       response.status match {
         case status if is2xx(status) =>
           logger.info(s"[conversationId=${notification.conversationId}][clientSubscriptionId=${notification.clientSubscriptionId}]: notification sent successfully. url=${config.declarationsConfig.customsNotificationBaseBaseUrl}")

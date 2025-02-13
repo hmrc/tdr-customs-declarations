@@ -26,12 +26,13 @@ import uk.gov.hmrc.customs.declaration.model.actionbuilders.HasConversationId
 import uk.gov.hmrc.customs.declaration.model.filetransmission.FileTransmission
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions, HttpException, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpErrorFunctions, HttpException, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileTransmissionConnector @Inject()(http: HttpClient,
+class FileTransmissionConnector @Inject()(http: HttpClientV2,
                                           logger: DeclarationsLogger,
                                           config: DeclarationsConfigService)
                                          (implicit ec: ExecutionContext) extends HttpErrorFunctions {
@@ -46,7 +47,7 @@ class FileTransmissionConnector @Inject()(http: HttpClient,
 
   private def post[A](request: FileTransmission, url: String)(implicit hasConversationId: HasConversationId, hc: HeaderCarrier): Future[Unit] = {
     logger.debug(s"Sending request to file transmission service. Url: $url Payload:\n${Json.prettyPrint(Json.toJson(request))}")
-    http.POST[FileTransmission, HttpResponse](url, request)(implicitly, implicitly, hc, implicitly).map{ response =>
+    http.post(url"$url").withBody(Json.toJson(request)).execute[HttpResponse].map{ response =>
       response.status match {
         case status if is2xx(status) =>
           logger.info(s"[conversationId=${request.file.reference}]: file transmission request sent successfully")
@@ -56,12 +57,12 @@ class FileTransmissionConnector @Inject()(http: HttpClient,
           throw Non2xxResponseException(status)
       }
     }.recoverWith {
-        case httpError: HttpException =>
-          logger.error(s"Call to file transmission failed. url=$url, HttpStatus=${httpError.responseCode}, Error=${httpError.message}")
-          Future.failed(new RuntimeException(httpError))
-        case e: Throwable =>
-          logger.error(s"Call to file transmission failed. url=$url")
-          Future.failed(e)
-      }
+      case httpError: HttpException =>
+        logger.error(s"Call to file transmission failed. url=$url, HttpStatus=${httpError.responseCode}, Error=${httpError.message}")
+        Future.failed(new RuntimeException(httpError))
+      case e: Throwable =>
+        logger.error(s"Call to file transmission failed. url=$url")
+        Future.failed(e)
+    }
   }
 }

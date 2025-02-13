@@ -15,7 +15,7 @@ import scala.language.postfixOps
 
 name := "tdr-customs-declarations"
 scalaVersion := "2.13.14"
-targetJvm := "jvm-11"
+targetJvm := "jvm-21"
 
 lazy val CdsIntegrationComponentTest = config("it") extend Test
 

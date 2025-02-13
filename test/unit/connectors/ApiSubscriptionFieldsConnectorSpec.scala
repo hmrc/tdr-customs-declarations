@@ -16,36 +16,47 @@
 
 package unit.connectors
 
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, getRequestedFor, postRequestedFor, urlEqualTo}
 import org.mockito.ArgumentMatchers.{any, anyString, eq => ameq}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.Eventually
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.http.HeaderNames
+import play.api.http.Status.OK
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContentAsXml
 import play.api.test.Helpers
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import play.mvc.Http.MimeTypes
 import uk.gov.hmrc.customs.declaration.connectors.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
 import uk.gov.hmrc.customs.declaration.model._
 import uk.gov.hmrc.customs.declaration.model.actionbuilders.ValidatedPayloadRequest
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads}
+import uk.gov.hmrc.play.bootstrap.http.HttpClientV2Provider
 import util.CustomsDeclarationsExternalServicesConfig.ApiSubscriptionFieldsContext
 import util.ExternalServicesConfig._
-import util.{ApiSubscriptionFieldsTestData, TestData}
+import util.{ApiSubscriptionFieldsTestData, TestData, UnitSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ApiSubscriptionFieldsConnectorSpec extends AnyWordSpecLike
-  with Matchers
-  with MockitoSugar
+class ApiSubscriptionFieldsConnectorSpec extends UnitSpec
+  with ScalaFutures
   with BeforeAndAfterEach
+  with BeforeAndAfterAll
+  with GuiceOneAppPerSuite
+  with MockitoSugar
   with Eventually
+  with WireMockSupport
+  with HttpClientV2Support
   with ApiSubscriptionFieldsTestData {
 
-  private val mockWSGetImpl = mock[HttpClient]
   private val mockLogger = mock[DeclarationsLogger]
   private val mockDeclarationsConfigService = mock[DeclarationsConfigService]
   private val mockDeclarationsConfig = mock[DeclarationsConfig]
@@ -53,13 +64,20 @@ class ApiSubscriptionFieldsConnectorSpec extends AnyWordSpecLike
   private implicit val vpr: ValidatedPayloadRequest[AnyContentAsXml] = TestData.TestCspValidatedPayloadRequest
   private implicit val ec: ExecutionContext = Helpers.stubControllerComponents().executionContext
 
-  private val connector = new ApiSubscriptionFieldsConnector(mockWSGetImpl, mockLogger, mockDeclarationsConfigService)
+  override lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "microservice.services.api-subscription-fields.host" -> Host,
+      "microservice.services.api-subscription-fields.port" -> Port,
+    ).overrides(
+      bind[HttpClientV2].toProvider[HttpClientV2Provider]
+    ).build()
 
-  private val expectedUrl = s"http://$Host:$Port$ApiSubscriptionFieldsContext/application/SOME_X_CLIENT_ID/context/some/api/context/version/1.0"
+  lazy val connector: ApiSubscriptionFieldsConnector = app.injector.instanceOf[ApiSubscriptionFieldsConnector]
+
+  private val expectedUrl = s"/field/application/SOME_X_CLIENT_ID/context/some/api/context/version/1.0"
 
   override protected def beforeEach(): Unit = {
-    reset(mockLogger, mockWSGetImpl, mockDeclarationsConfigService)
-
+    reset(mockLogger, mockDeclarationsConfigService)
     when(mockDeclarationsConfigService.declarationsConfig).thenReturn(mockDeclarationsConfig)
     when(mockDeclarationsConfig.apiSubscriptionFieldsBaseUrl).thenReturn(s"http://$Host:$Port$ApiSubscriptionFieldsContext")
   }
@@ -67,12 +85,17 @@ class ApiSubscriptionFieldsConnectorSpec extends AnyWordSpecLike
   "ApiSubscriptionFieldsConnector" can {
     "when making a successful request" should {
       "use the correct URL for valid path parameters and config" in {
-        val futureResponse = Future.successful(apiSubscriptionFieldsResponse)
-        when(mockWSGetImpl.GET[ApiSubscriptionFieldsResponse](
-          ameq(expectedUrl), any(), any())
-          (any[HttpReads[ApiSubscriptionFieldsResponse]](), any[HeaderCarrier](), any[ExecutionContext])).thenReturn(futureResponse)
 
-        awaitRequest shouldBe apiSubscriptionFieldsResponse
+        setupSuccessfulDeclarationRequest()
+
+        val result = connector.getSubscriptionFields(apiSubscriptionKey).futureValue
+
+        result shouldBe apiSubscriptionFieldsResponse
+
+        wireMockServer.verify(
+          1,
+          getRequestedFor(urlEqualTo(expectedUrl))
+        )
       }
     }
 
@@ -89,12 +112,20 @@ class ApiSubscriptionFieldsConnectorSpec extends AnyWordSpecLike
     }
   }
 
-  private def awaitRequest = {
-    await(connector.getSubscriptionFields(apiSubscriptionKey))
-  }
+//  private def awaitRequest = {
+//    await(connector.getSubscriptionFields(apiSubscriptionKey))
+//  }
+//
+//  private def returnResponseForRequest(eventualResponse: Future[ApiSubscriptionFieldsResponse]) = {
+//    when(mockWSGetImpl.GET[ApiSubscriptionFieldsResponse](anyString(), any(), any())
+//      (any[HttpReads[ApiSubscriptionFieldsResponse]](), any[HeaderCarrier](), any[ExecutionContext])).thenReturn(eventualResponse)
+//  }
 
-  private def returnResponseForRequest(eventualResponse: Future[ApiSubscriptionFieldsResponse]) = {
-    when(mockWSGetImpl.GET[ApiSubscriptionFieldsResponse](anyString(), any(), any())
-      (any[HttpReads[ApiSubscriptionFieldsResponse]](), any[HeaderCarrier](), any[ExecutionContext])).thenReturn(eventualResponse)
+  private def setupSuccessfulDeclarationRequest(): Unit = {
+    wireMockServer.stubFor(get(urlEqualTo(expectedUrl))
+      .willReturn(
+        aResponse()
+          .withStatus(OK)
+          .withBody(responseJsonString)))
   }
 }

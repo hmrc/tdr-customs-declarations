@@ -28,14 +28,15 @@ import uk.gov.hmrc.customs.declaration.model._
 import uk.gov.hmrc.customs.declaration.model.actionbuilders.AuthorisedRequest
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, HttpErrorFunctions, HttpResponse, StringContextOps, HttpException}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import java.time.{Instant, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.NodeSeq
 
 @Singleton
-class DeclarationStatusConnector @Inject() (val http: HttpClient,
+class DeclarationStatusConnector @Inject() (val http: HttpClientV2,
                                             val logger: DeclarationsLogger,
                                             val serviceConfigProvider: ServiceConfigProvider,
                                             val config: DeclarationsConfigService,
@@ -83,7 +84,7 @@ class DeclarationStatusConnector @Inject() (val http: HttpClient,
   private def post[A](xml: NodeSeq, url: String, declarationHeaders: Seq[(String, String)])(implicit ar: AuthorisedRequest[A], hc: HeaderCarrier) = {
     logger.debug(s"Sending request to $url. Headers ${declarationHeaders} Payload:\n$xml")
 
-    http.POSTString[HttpResponse](url, xml.toString(), headers = declarationHeaders).map { response =>
+    http.post(url"$url").withBody(xml.toString()).execute[HttpResponse].map { response =>
       response.status match {
         case status if is2xx(status) =>
           response

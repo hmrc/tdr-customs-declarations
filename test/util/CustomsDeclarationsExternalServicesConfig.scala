@@ -25,7 +25,7 @@ object CustomsDeclarationsExternalServicesConfig {
   val MdgCancellationDeclarationServiceContextV3 = "/mdgCancelDecService3/submit3"
   val MdgStatusDeclarationServiceContextV2 = "/mdgStatusDecService2/submit2"
   val MdgStatusDeclarationServiceContextV3 = "/mdgStatusDecService3/submit3"
-  val ApiSubscriptionFieldsContext = "/api-subscription-fields/field"
+  val ApiSubscriptionFieldsContext = "/field"
   val CustomsDeclarationsMetricsContext = "/log-times"
   val AuditContext = "/write/audit.*"
   val UpscanInitiateContextV1 = "/upscan/initiate"
