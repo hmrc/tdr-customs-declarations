@@ -49,16 +49,9 @@ class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar
     Json.parse(
       """
          |{
-         |   "scopes":[
-         |      {
-         |         "key":"write:customs-declaration",
-         |         "name":"Submit a Customs Declaration",
-         |         "description":"Submit a Customs Declaration"
-         |      }
-         |   ],
          |   "api":{
          |      "name":"TDR Customs Declarations",
-         |      "description":"Single WCO-compliant Customs Declarations API for TDR",
+         |      "description":"Single WCO-compliant Customs Declarations API",
          |      "context":"tdr/customs/declarations",
          |      "versions":[
          |         {

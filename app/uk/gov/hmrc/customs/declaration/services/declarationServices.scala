@@ -99,10 +99,9 @@ trait DeclarationService extends ApiSubscriptionFieldsService {
       logger.debug("NRS enabled. Calling NRS.")
 
       val startTime = dateTimeProvider.zonedDateTimeUtc
-
+      logger.debug(s"NRS returned submission id: $nrSubmissionId")
       nrsService.send(vpr, hc)
         .map(nrSubmissionId => {
-          logger.debug(s"NRS returned submission id: $nrSubmissionId")
           logCallDuration(startTime)
         })
         .recover {
@@ -123,7 +122,7 @@ trait DeclarationService extends ApiSubscriptionFieldsService {
   }
 
   private def callBackend[A](asfr: ApiSubscriptionFieldsResponse)
-                            (implicit vpr: ValidatedPayloadRequest[A],  hc: HeaderCarrier): Future[Either[Result, Option[NrSubmissionId]]] = {
+                            (implicit vpr: ValidatedPayloadRequest[A], hc: HeaderCarrier): Future[Either[Result, Option[NrSubmissionId]]] = {
     val dateTime = dateTimeProvider.nowUtc()
     val correlationId = uniqueIdsService.correlation
     val xmlToSend = preparePayload(vpr.xmlBody, asfr, dateTime)
@@ -170,9 +169,9 @@ trait ApiSubscriptionFieldsService {
   private val apiContextEncoded = URLEncoder.encode("customs/declarations", "UTF-8")
 
   def futureApiSubFieldsId[A](c: ClientId)
-                             (implicit vpr: HasConversationId with HasApiVersion with HasAuthorisedAs with ExtractedHeaders, hc: HeaderCarrier): Future[Either[Result, ApiSubscriptionFieldsResponse]] = {
+                             (implicit vpr: HasConversationId & HasApiVersion & HasAuthorisedAs & ExtractedHeaders, hc: HeaderCarrier): Future[Either[Result, ApiSubscriptionFieldsResponse]] = {
     (apiSubFieldsConnector.getSubscriptionFields(ApiSubscriptionKey(c, apiContextEncoded, vpr.requestedApiVersion)) map {
-      response: ApiSubscriptionFieldsResponse =>
+      (response: ApiSubscriptionFieldsResponse) =>
         vpr.authorisedAs match {
           case Csp(_, _, _) =>
             if (response.fields.authenticatedEori.exists(_.trim.nonEmpty)) {

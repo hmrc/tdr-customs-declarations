@@ -43,8 +43,6 @@ class DeclarationsConfigService @Inject()(configValidatedNel: ConfigValidatedNel
   private val unavailablePeriodDurationInMillisNel = root.int("circuitBreaker.unavailablePeriodDurationInMillis")
   private val unstablePeriodDurationInMillisNel = root.int("circuitBreaker.unstablePeriodDurationInMillis")
 
-  private val declarationStatusRequestDaysLimit = root.int("declarationStatus.requestDaysLimit")
-
   private val bearerTokenNel = customsNotificationsService.string("bearer-token")
   private val customsNotificationsServiceUrlNel = customsNotificationsService.serviceUrl
   private val apiSubscriptionFieldsServiceUrlNel = apiSubscriptionFieldsService.serviceUrl
@@ -64,26 +62,25 @@ class DeclarationsConfigService @Inject()(configValidatedNel: ConfigValidatedNel
   private val ttlInSeconds = root.int("ttlInSeconds")
 
   private val validatedDeclarationsConfig: CustomsValidatedNel[DeclarationsConfig] = (
-    apiSubscriptionFieldsServiceUrlNel, customsNotificationsServiceUrlNel, customsDeclarationsMetricsServiceUrlNel, bearerTokenNel,
-    declarationStatusRequestDaysLimit
-    ) mapN DeclarationsConfig
+    apiSubscriptionFieldsServiceUrlNel, customsNotificationsServiceUrlNel, customsDeclarationsMetricsServiceUrlNel, bearerTokenNel
+    ) mapN DeclarationsConfig.apply
 
   private val validatedDeclarationsShutterConfig: CustomsValidatedNel[DeclarationsShutterConfig] = (
     v1ShutteredNel, v2ShutteredNel, v3ShutteredNel
-  ) mapN DeclarationsShutterConfig
+  ) mapN DeclarationsShutterConfig.apply
 
   private val validatedDeclarationsCircuitBreakerConfig: CustomsValidatedNel[DeclarationsCircuitBreakerConfig] = (
     numberOfCallsToTriggerStateChangeNel, unavailablePeriodDurationInMillisNel, unstablePeriodDurationInMillisNel
-    ) mapN DeclarationsCircuitBreakerConfig
+    ) mapN DeclarationsCircuitBreakerConfig.apply
 
   private val validatedNrsConfig: CustomsValidatedNel[NrsConfig] = (
     nrsEnabled, nrsApiKey, nrsUrl
-    ) mapN NrsConfig
+    ) mapN NrsConfig.apply
 
   private val validatedFileUploadConfig: CustomsValidatedNel[FileUploadConfig] = (
     upscanInitiateUrlV1, upscanInitiateUrlV2, upscanInitiateMaximumFileSize,
     fileUploadUpscanCallbackUrl, fileGroupSizeMaximum, fileTransmissionCallbackUrl, fileTransmissionUrl, ttlInSeconds
-  ) mapN FileUploadConfig
+  ) mapN FileUploadConfig.apply
 
   private val customsConfigHolder =
     (validatedDeclarationsConfig,
@@ -91,7 +88,7 @@ class DeclarationsConfigService @Inject()(configValidatedNel: ConfigValidatedNel
       validatedDeclarationsCircuitBreakerConfig,
       validatedNrsConfig,
       validatedFileUploadConfig
-      ) mapN CustomsConfigHolder
+      ) mapN CustomsConfigHolder.apply
 
   private val customsConfigHolderConf =
     customsConfigHolder.fold(

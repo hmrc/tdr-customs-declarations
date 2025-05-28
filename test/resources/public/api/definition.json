@@ -1,14 +1,7 @@
 {
-  "scopes": [
-    {
-      "key": "write:customs-wco-declaration",
-      "name": "Access customs UCC declaration",
-      "description": "Customs UCC Declaration"
-    }
-  ],
   "api": {
     "name": "TDR Customs UCC Declaration",
-    "description": "Single UCC Compliant Declaration API for TDR",
+    "description": "Single UCC Compliant Declaration API",
     "context": "tdr-customs-wco",
     "versions": [
       {

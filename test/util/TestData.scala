@@ -18,7 +18,7 @@ package util
 
 import com.google.inject.AbstractModule
 import org.scalatestplus.mockito.MockitoSugar.mock
-import play.api.http.HeaderNames._
+import play.api.http.HeaderNames.*
 import play.api.http.MimeTypes
 import play.api.inject.guice.GuiceableModule
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
@@ -27,25 +27,28 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.CONTENT_TYPE
 import uk.gov.hmrc.auth.core.AffinityGroup.Individual
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L500
-import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve._
+import uk.gov.hmrc.auth.core.*
+import uk.gov.hmrc.auth.core.retrieve.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.customs.declaration.logging.CdsLogger
-import uk.gov.hmrc.customs.declaration.model._
-import uk.gov.hmrc.customs.declaration.model.actionbuilders.ActionBuilderModelHelper._
-import uk.gov.hmrc.customs.declaration.model.actionbuilders._
-import uk.gov.hmrc.customs.declaration.model.upscan._
+import uk.gov.hmrc.customs.declaration.model.*
+import uk.gov.hmrc.customs.declaration.model.actionbuilders.ActionBuilderModelHelper.*
+import uk.gov.hmrc.customs.declaration.model.actionbuilders.*
+import uk.gov.hmrc.customs.declaration.model.upscan.*
 import uk.gov.hmrc.customs.declaration.services.{UniqueIdsService, UuidService}
 import unit.logging.StubDeclarationsLogger
 import util.ApiSubscriptionFieldsTestData.subscriptionFieldsId
+import util.CustomsDeclarationsExternalServicesConfig.NrsServiceContext
 import util.CustomsDeclarationsMetricsTestData.EventStart
+import util.ExternalServicesConfig.{Host, Port}
 import util.RequestHeaders.{ValidHeadersV1, ValidHeadersV2, ValidHeadersV3, X_EORI_IDENTIFIER_NAME}
 import util.TestData.declarantEori
 
-import java.net.URL
+import java.net.{SocketException, URL}
 import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
 import java.util.UUID
 import java.util.UUID.fromString
+import java.util.concurrent.TimeoutException
 import scala.xml.{Elem, NodeSeq}
 
 object TestData {
@@ -56,10 +59,6 @@ object TestData {
   val correlationIdValue = "e61f8eee-812c-4b8f-b193-06aedc60dca2"
   val correlationIdUuid: UUID = fromString(correlationIdValue)
   val correlationId: CorrelationId = CorrelationId(correlationIdUuid)
-
-  val dmirIdValue = "1b0a48a8-1259-42c9-9d6a-e797b919eb16"
-  val dmirIdUuid: UUID = fromString(dmirIdValue)
-  val dmirId: DeclarationManagementInformationRequestId = DeclarationManagementInformationRequestId(dmirIdUuid)
 
   val mrnValue = "theMrn"
   val mrn: Mrn = Mrn(mrnValue)
@@ -74,13 +73,13 @@ object TestData {
   val clientSubscriptionIdString: String = "327d9145-4965-4d28-a2c5-39dedee50334"
 
   val nrSubmissionId: NrSubmissionId = NrSubmissionId(conversationId.uuid)
-  val nrsConfigEnabled: NrsConfig = NrsConfig(nrsEnabled = true, "nrs-api-key", "nrs.url")
-  val nrsConfigDisabled: NrsConfig = NrsConfig(nrsEnabled = false, "nrs-api-key",  "nrs.url")
+  val nrsConfigEnabled: NrsConfig = NrsConfig(nrsEnabled = true, "nrs-api-key", s"http://$Host:$Port$NrsServiceContext")
+  val nrsConfigDisabled: NrsConfig = NrsConfig(nrsEnabled = false, "nrs-api-key",  s"http://$Host:$Port$NrsServiceContext")
 
   val allVersionsUnshuttered: DeclarationsShutterConfig = DeclarationsShutterConfig(Some(false), Some(false), Some(false))
 
   val TenMb = 10485760
-  val fileUploadConfig: FileUploadConfig = FileUploadConfig("upscan-initiate-v1.url", "upscan-initiate-v2.url", 10485760, "callback.url", 3, "fileTransmissionCallbackUrl", "fileTransmissionUrl", 600)
+  val fileUploadConfig: FileUploadConfig = FileUploadConfig(s"http://$Host:$Port/upscan/initiate", s"http://$Host:$Port/upscan/v2/initiate", 10485760, "callback.url", 3, "fileTransmissionCallbackUrl", "fileTransmissionUrl", 600)
 
   val validBadgeIdentifierValue = "BADGEID123"
   val invalidBadgeIdentifierValue = "INVALIDBADGEID123456789"
@@ -255,14 +254,23 @@ object TestData {
 
   type EmulatedServiceFailure = UnsupportedOperationException
   val emulatedServiceFailure = new EmulatedServiceFailure("Emulated service failure.")
+  
+  type ConnectionResetFailure = SocketException
+  val connectionResetFailure = new ConnectionResetFailure("Connection reset")
 
+  type TimeoutExceptionFailure = TimeoutException
+  val timeoutExceptionFailure = new TimeoutExceptionFailure("Connection timout")
+
+  type EmulatedInsufficientEnrolments = InsufficientEnrolments
+  val emulatedInsufficientEnrolments = new EmulatedInsufficientEnrolments("Insufficient Enrolments")
+  
   lazy val mockUuidService: UuidService = mock[UuidService]
 
   lazy val stubDeclarationsLogger = new StubDeclarationsLogger(mock[CdsLogger])
 
   object TestModule extends AbstractModule {
     override def configure(): Unit = {
-      bind(classOf[UuidService]) toInstance mockUuidService
+      bind(classOf[UuidService]) `toInstance` mockUuidService
     }
 
     def asGuiceableModule: GuiceableModule = GuiceableModule.guiceable(this)
@@ -274,7 +282,6 @@ object TestData {
 
     override def correlation: CorrelationId = correlationId
 
-    override def dmir: DeclarationManagementInformationRequestId = dmirId
   }
 
   val TestXmlPayload: Elem = <foo>bar</foo>
@@ -282,9 +289,9 @@ object TestData {
   val TestFakeRequestWithBadgeIdAndNoEori: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(("Authorization", "bearer-token"), ("X-Badge-Identifier", badgeIdentifier.value))
   val TestFakeRequestWithEoriAndNoBadgeId: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(("Authorization", "bearer-token"), ("X-EORI-Identifier", declarantEori.value))
   val TestFakeRequestMultipleHeaderValues: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(("Authorization", "bearer-token"), ("Accept", "ABC"), ("Accept", "DEF"))
-  val TestFakeRequestWithV1Headers: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(ValidHeadersV1.toSeq: _*)
-  val TestFakeRequestWithV2Headers: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(ValidHeadersV2.toSeq: _*)
-  val TestFakeRequestWithV3Headers: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(ValidHeadersV3.toSeq: _*)
+  val TestFakeRequestWithV1Headers: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(ValidHeadersV1.toSeq*)
+  val TestFakeRequestWithV2Headers: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(ValidHeadersV2.toSeq*)
+  val TestFakeRequestWithV3Headers: FakeRequest[AnyContentAsXml] = FakeRequest().withXmlBody(TestXmlPayload).withHeaders(ValidHeadersV3.toSeq*)
 
   def testFakeRequestWithBadgeId(badgeIdString: String = badgeIdentifier.value): FakeRequest[AnyContentAsXml] =
     FakeRequest().withXmlBody(TestXmlPayload).withHeaders(RequestHeaders.X_BADGE_IDENTIFIER_NAME -> badgeIdString)
@@ -447,10 +454,5 @@ object RequestHeaders {
     X_CLIENT_ID_HEADER,
     X_BADGE_IDENTIFIER_HEADER,
     X_SUBMITTER_IDENTIFIER_HEADER
-  )
-
-  val OtherHaders: Map[String, String] = Map(
-    ACCEPT_HMRC_XML_V2_HEADER,
-    CONTENT_TYPE_HEADER
   )
 }

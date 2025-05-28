@@ -63,13 +63,11 @@ class FileUploadUpscanNotificationBusinessServiceSpec extends AnyWordSpecLike wi
     FileTransmissionProperty("DocumentType", mdFileOne.documentType.get.toString)
   )
   private val fileTransmissionRequest = FileTransmission(fileTransmissionBatchOne, new URL(s"$fileTransmissionCallbackUrl/file-transmission-notify/clientSubscriptionId/$clientSubscriptionIdString"), fileTransmissionFileOne, fileTransmissionInterfaceOne, fileTransmissionProperties)
+  private implicit val hc: HeaderCarrier = HeaderCarrier()
   private implicit val ec: ExecutionContext = Helpers.stubControllerComponents().executionContext
   private implicit val implicitHasConversationId: HasConversationId = new HasConversationId {
     override val conversationId: ConversationId = ConversationId(FileReferenceOne.value)
   }
-
-  private implicit val hc: HeaderCarrier = new HeaderCarrier()
-
   private val fileGroupSizeMaximum = 5
   private val fileUploadConfig = FileUploadConfig("UPSCAN_INITIATE_V1_URL", "UPSCAN_INITIATE_V2_URL", TenMb, "UPSCAN_URL_IGNORED", fileGroupSizeMaximum, fileTransmissionCallbackUrl, fileTransmissionServiceURL, 600)
 
@@ -104,7 +102,7 @@ class FileUploadUpscanNotificationBusinessServiceSpec extends AnyWordSpecLike wi
 
       val error: IllegalStateException = intercept[IllegalStateException] (await(service.persistAndCallFileTransmission(subscriptionFieldsId, readyCallbackBody)))
 
-      error.getMessage shouldBe s"database error - can't find record with file reference ${FileReferenceOne.value.toString}"
+      error.getMessage shouldBe s"database error - can't find record with file reference [${FileReferenceOne.value.toString}]"
       verify(mockRepo).update(
         ameq[UUID](subscriptionFieldsId.value).asInstanceOf[SubscriptionFieldsId],
         ameq[UUID](FileReferenceOne.value).asInstanceOf[FileReference],
@@ -118,7 +116,7 @@ class FileUploadUpscanNotificationBusinessServiceSpec extends AnyWordSpecLike wi
 
       val error: IllegalStateException = intercept[IllegalStateException](await(service.persistAndCallFileTransmission(subscriptionFieldsId, readyCallbackBody)))
 
-      error.getMessage shouldBe s"database error - can't find file with file reference ${FileReferenceOne.value.toString}"
+      error.getMessage shouldBe s"database error - can't find file with file reference [${FileReferenceOne.value.toString}]"
       verify(mockRepo).update(
         ameq[UUID](subscriptionFieldsId.value).asInstanceOf[SubscriptionFieldsId],
         ameq[UUID](FileReferenceOne.value).asInstanceOf[FileReference],

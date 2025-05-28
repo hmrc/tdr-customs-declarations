@@ -16,6 +16,7 @@
 
 package integration
 
+import org.mockito.ArgumentMatchers.any
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatest.matchers.should.Matchers
@@ -27,9 +28,10 @@ import play.api.mvc.AnyContentAsXml
 import play.api.test.Helpers.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND}
 import uk.gov.hmrc.customs.declaration.connectors.CustomsDeclarationsMetricsConnector
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
-import uk.gov.hmrc.customs.declaration.model.actionbuilders.ValidatedPayloadRequest
-import util.CustomsDeclarationsMetricsTestData._
+import uk.gov.hmrc.customs.declaration.model.actionbuilders.{HasConversationId, ValidatedPayloadRequest}
+import util.CustomsDeclarationsMetricsTestData.*
 import util.ExternalServicesConfig.{Host, Port}
+import util.MockitoPassByNameHelper.PassByNameVerifier
 import util.VerifyLogging.verifyDeclarationsLoggerError
 import util.externalservices.{AuditService, CustomsDeclarationsMetricsService}
 import util.{CustomsDeclarationsExternalServicesConfig, TestData}
@@ -54,7 +56,14 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
   override protected def afterAll(): Unit = {
     stopMockServer()
   }
-
+  
+  private def logVerifier(mockLogger: DeclarationsLogger, logLevel: String, logText: String): Unit = {
+    PassByNameVerifier(mockLogger, logLevel)
+      .withByNameParam(logText)
+      .withParamMatcher(any[HasConversationId])
+      .verify()
+  }
+  
   override implicit lazy val app: Application =
     GuiceApplicationBuilder(overrides = Seq(IntegrationTestModule(mockDeclarationsLogger).asGuiceableModule)).configure(Map(
       "auditing.consumer.baseUri.host" -> Host,
@@ -70,11 +79,12 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
     "make a correct request" in {
       setupCustomsDeclarationsMetricsServiceToReturn()
 
-      val response: Unit = sendValidRequest().futureValue
+      val response: Unit = sendValidRequest()
 
       response shouldBe (() : Unit)
       verifyCustomsDeclarationsMetricsServiceWasCalledWith(ValidCustomsDeclarationsMetricsRequest)
       verifyAuditServiceWasNotCalled()
+      logVerifier(mockDeclarationsLogger, "debug", "[conversationId=38400000-8cf0-11bd-b23e-10b96e4ef00d]: customs declarations metrics sent successfully")
     }
 
     "return a failed future when external service returns 404" in {
@@ -82,7 +92,7 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
 
       (sendValidRequest()).futureValue shouldBe (())
       verifyAuditServiceWasNotCalled()
-      verifyDeclarationsLoggerError("Call to customs declarations metrics service failed. url=http://localhost:11111/log-times, HttpStatus=404, Error=Received a non 2XX response, response body=")
+      verifyDeclarationsLoggerError(s"Call to customs declarations metrics service failed. url=http://localhost:$Port/log-times, HttpStatus=404, Error=Received a non 2XX response, response body=")
     }
 
     "return a failed future when external service returns 400" in {
@@ -90,7 +100,7 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
 
       (sendValidRequest()).futureValue shouldBe (())
       verifyAuditServiceWasNotCalled()
-      verifyDeclarationsLoggerError("Call to customs declarations metrics service failed. url=http://localhost:11111/log-times, HttpStatus=400, Error=Received a non 2XX response, response body=")
+      verifyDeclarationsLoggerError(s"Call to customs declarations metrics service failed. url=http://localhost:$Port/log-times, HttpStatus=400, Error=Received a non 2XX response, response body=")
     }
 
     "return a failed future when external service returns 500" in {
@@ -98,7 +108,7 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
 
       (sendValidRequest()).futureValue shouldBe (())
       verifyAuditServiceWasNotCalled()
-      verifyDeclarationsLoggerError("Call to customs declarations metrics service failed. url=http://localhost:11111/log-times, HttpStatus=500, Error=Received a non 2XX response, response body=")
+      verifyDeclarationsLoggerError(s"Call to customs declarations metrics service failed. url=http://localhost:$Port/log-times, HttpStatus=500, Error=Received a non 2XX response, response body=")
     }
 
     "return a failed future when fail to connect the external service" in {
@@ -106,7 +116,7 @@ with BeforeAndAfterAll with AuditService with CustomsDeclarationsMetricsService 
 
       intercept[RuntimeException]((sendValidRequest()).futureValue).getCause.getClass shouldBe classOf[RuntimeException]
 
-      verifyDeclarationsLoggerError(s"Call to customs declarations metrics service failed. url=http://localhost:11111/log-times, HttpStatus=502, Error=POST of 'http://localhost:11111/log-times' failed. Caused by: 'Connection refused: localhost/$localhostString:11111'")
+      verifyDeclarationsLoggerError(s"Call to customs declarations metrics service failed. url=http://localhost:$Port/log-times, HttpStatus=502, Error=POST of 'http://localhost:$Port/log-times' failed. Caused by: 'Connection refused: localhost/$localhostString:$Port'")
 
       startMockServer()
     }

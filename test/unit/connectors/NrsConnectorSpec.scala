@@ -16,40 +16,80 @@
 
 package unit.connectors
 
-import org.mockito.ArgumentMatchers.{eq => ameq, _}
-import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfterEach
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, post, postRequestedFor, urlEqualTo}
+import com.github.tomakehurst.wiremock.http.Fault
+import org.mockito.Mockito.*
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.http.MimeTypes
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.inject.bind
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.AnyContentAsJson
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import play.api.test.Helpers.{ACCEPT, CONTENT_TYPE, await, defaultAwaitTimeout}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.customs.declaration.connectors.NrsConnector
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
-import uk.gov.hmrc.customs.declaration.model._
+import uk.gov.hmrc.customs.declaration.model.*
 import uk.gov.hmrc.customs.declaration.model.actionbuilders.ValidatedPayloadRequest
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
+import uk.gov.hmrc.play.audit.http.HttpAuditing
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpAuditing, HttpClientV2Provider}
 import util.CustomsDeclarationsMetricsTestData.EventStart
-import util.RequestHeaders.OtherHaders
 import util.TestData
-import util.TestData.{fileUploadConfig, nrsConfigEnabled}
+import util.TestData.{fileUploadConfig, nrSubmissionId, nrsConfigEnabled}
+import util.ExternalServicesConfig.*
 
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.xml.NodeSeq
 
-class NrsConnectorSpec extends AnyWordSpecLike with MockitoSugar with BeforeAndAfterEach with Eventually with Matchers{
+class NrsConnectorSpec extends AnyWordSpecLike
+  with MockitoSugar
+  with BeforeAndAfterEach
+  with Eventually
+  with Matchers
+  with BeforeAndAfterAll
+  with GuiceOneAppPerSuite
+  with WireMockSupport
+  with HttpClientV2Support {
 
-  private implicit val ec: ExecutionContext = Helpers.stubControllerComponents().executionContext
-  private val mockWsPost = mock[HttpClient]
+  private implicit val hc: HeaderCarrier = HeaderCarrier()
+  private val mockWsPost = mock[HttpClientV2]
   private val mockLogger = mock[DeclarationsLogger]
   private val mockDeclarationsConfigService = mock[DeclarationsConfigService]
-  private val connector = new NrsConnector(mockWsPost, mockLogger, mockDeclarationsConfigService)
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
+  private val mockAuditConnector = mock[AuditConnector]
+
+  override lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "play.http.router" -> "definition.Routes",
+      "application.logger.name" -> "customs-declarations",
+      "appName" -> "customs-declarations",
+      "appUrl" -> "http://customs-wco-declaration.service",
+      "auditing.enabled" -> false,
+      "auditing.traceRequests" -> false,
+      "microservice.services.api-subscription-fields" -> Host,
+      "microservice.services.api-subscription-fields" -> Port,
+    ).overrides(
+      bind[HttpAuditing].to[DefaultHttpAuditing],
+      bind[String].qualifiedWith("appName").toInstance("customs-declarations"),
+      bind[HttpClientV2].toProvider[HttpClientV2Provider],
+      bind[AuditConnector].toInstance(mockAuditConnector),
+      bind[DeclarationsConfigService].toInstance(mockDeclarationsConfigService),
+      bind[DeclarationsLogger].toInstance(mockLogger)
+    ).build()
+
+  private val connector: NrsConnector = app.injector.instanceOf[NrsConnector]
 
   private implicit val jsonRequest: ValidatedPayloadRequest[AnyContentAsJson] =  ValidatedPayloadRequest(
     ConversationId(UUID.randomUUID()),
@@ -61,83 +101,75 @@ class NrsConnectorSpec extends AnyWordSpecLike with MockitoSugar with BeforeAndA
     FakeRequest().withJsonBody(Json.obj("fake" -> "request"))
   )
 
-  private val httpException =  UpstreamErrorResponse("Emulated 404 response from a web call", 404)
-
   override protected def beforeEach(): Unit = {
     reset(mockWsPost, mockLogger)
+    wireMockServer.resetMappings()
+    wireMockServer.resetRequests()
     when(mockDeclarationsConfigService.fileUploadConfig).thenReturn(fileUploadConfig)
     when(mockDeclarationsConfigService.nrsConfig).thenReturn(nrsConfigEnabled)
   }
 
   "NrsConnector" can {
-
     "when making a successful request" should {
+      "pass URL from config, with request body and extra headers" in {
+        wireMockServer.stubFor(post(urlEqualTo("/submission"))
+          .withHeader(CONTENT_TYPE, equalTo(MimeTypes.JSON))
+          .withHeader(ACCEPT, equalTo("*/*"))
+          .withHeader("X-API-Key", equalTo("nrs-api-key"))
+          .withRequestBody(equalTo(Json.stringify(Json.toJson(TestData.nrsPayload))))
+          .willReturn(
+            aResponse()
+              .withBody(Json.stringify(Json.toJson(nrSubmissionId)))
+              .withStatus(OK)))
 
-      "pass URL from config" in {
-        returnResponseForRequest(Future.successful(TestData.nrSubmissionId))
+        awaitRequest shouldBe nrSubmissionId
 
-        awaitRequest
-
-        verify(mockWsPost).POST(ameq(nrsConfigEnabled.nrsUrl), any[UpscanInitiatePayload], any[SeqOfHeader])(
-          any[Writes[UpscanInitiatePayload]], any[HttpReads[HttpResponse]](), any[HeaderCarrier](), any[ExecutionContext])
-      }
-
-      "pass in the body" in {
-        returnResponseForRequest(Future.successful(TestData.nrSubmissionId))
-
-        awaitRequest
-
-        verify(mockWsPost).POST(anyString, ameq(TestData.nrsPayload), any[SeqOfHeader])(
-          any[Writes[NrsPayload]], any[HttpReads[NrSubmissionId]](), any[HeaderCarrier](), any[ExecutionContext])
+        wireMockServer.verify(1, postRequestedFor(urlEqualTo("/submission"))
+          .withHeader(CONTENT_TYPE, equalTo(MimeTypes.JSON))
+          .withHeader(ACCEPT, equalTo("*/*"))
+          .withHeader("X-API-Key", equalTo("nrs-api-key"))
+          .withRequestBody(equalTo(Json.stringify(Json.toJson(TestData.nrsPayload))))
+        )
       }
     }
 
     "when making an failing request" should {
-      "propagate an underlying error when nrs service call fails with a non-http exception" in {
-        returnResponseForRequest(Future.failed(TestData.emulatedServiceFailure))
+      "propagate an underlying error when api subscription fields call fails with a non-http exception" in {
+        wireMockServer.stubFor(post(urlEqualTo("/submission"))
+          .withHeader(CONTENT_TYPE, equalTo(MimeTypes.JSON))
+          .withHeader(ACCEPT, equalTo("*/*"))
+          .withHeader("X-API-Key", equalTo("nrs-api-key"))
+          .withRequestBody(equalTo(Json.stringify(Json.toJson(TestData.nrsPayload))))
+          .willReturn(
+            aResponse()
+              .withFault(Fault.CONNECTION_RESET_BY_PEER)))
 
-        val caught = intercept[TestData.EmulatedServiceFailure] {
+        val caught = intercept[TestData.ConnectionResetFailure] {
           awaitRequest
         }
-        caught shouldBe TestData.emulatedServiceFailure
+
+        caught.getCause shouldBe TestData.connectionResetFailure.getCause
       }
 
       "wrap an underlying error when nrs service call fails with an http exception" in {
-        returnResponseForRequest(Future.failed(httpException))
+        wireMockServer.stubFor(post(urlEqualTo("/submission"))
+          .withHeader(CONTENT_TYPE, equalTo(MimeTypes.JSON))
+          .withHeader(ACCEPT, equalTo("*/*"))
+          .withHeader("X-API-Key", equalTo("nrs-api-key"))
+          .withRequestBody(equalTo(Json.stringify(Json.toJson(TestData.nrsPayload))))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)))
 
         val caught = intercept[UpstreamErrorResponse] {
           awaitRequest
         }
-        caught shouldBe httpException
-      }
-    }
-
-    "when Gov-Test-Scenario in the header" should {
-      "overwrite value to default" in {
-        implicit val hc: HeaderCarrier = HeaderCarrier(otherHeaders = OtherHaders.toSeq :+ ("Gov-Test-Scenario", "AMEND_DECLARATION"))
-        val updatedHC = connector.overwriteGovTestScenarioHeaderValue(OtherHaders.toSeq)(hc)
-        updatedHC.find(_._1.equals("Gov-Test-Scenario")).get._2 shouldBe "DEFAULT"
-        updatedHC.size shouldBe 3
-      }
-    }
-
-    "when Gov-Test-Scenario is not in the header" should {
-      "not be added" in {
-        implicit val hc: HeaderCarrier = HeaderCarrier(otherHeaders = OtherHaders.toSeq)
-        val updatedHC = connector.overwriteGovTestScenarioHeaderValue(OtherHaders.toSeq)(hc)
-        updatedHC.find(_._1.equals("Gov-Test-Scenario")) shouldBe None
-        updatedHC.size shouldBe 2
+        caught.message shouldBe s"POST of 'http://localhost:$Port/submission' returned 500. Response body: ''"
       }
     }
   }
 
   private def awaitRequest = {
     await(connector.send(TestData.nrsPayload, VersionTwo))
-  }
-
-  private def returnResponseForRequest(eventualResponse: Future[NrSubmissionId]) = {
-    when(mockWsPost.POST(anyString, any[NrsPayload], any[SeqOfHeader])(
-      any[Writes[NrsPayload]], any[HttpReads[NrSubmissionId]](), any[HeaderCarrier](), any[ExecutionContext]))
-      .thenReturn(eventualResponse)
   }
 }

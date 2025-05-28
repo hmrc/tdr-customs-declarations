@@ -65,11 +65,20 @@ object FileReference {
 case class CallbackFields(name: String, mimeType: String, checksum: String, uploadTimestamp: Instant, outboundLocation: URL)
 
 object CallbackFields {
-  implicit val dateWriter = Writes[Instant] { x => JsString(x.toString) }
-  implicit val dateReader = Reads.of[Instant]
+  implicit val dateWriter: Writes[Instant] = Writes[Instant] { x =>
+    JsString(x.toString)
+  }
 
-  implicit val urlFormat:Format[URL] = HttpUrlFormat
-  implicit val format:OFormat[CallbackFields] = Json.format[CallbackFields]
+  implicit val dateReader: Reads[Instant] = Reads[Instant] {
+    case JsString(value) =>
+      Try(Instant.parse(value)).map(JsSuccess(_)).getOrElse(JsError("Invalid date format for Instant"))
+    case _ =>
+      JsError("Expected JsString for Instant")
+  }
+
+  implicit val urlFormat: HttpUrlFormat.type = HttpUrlFormat
+
+  implicit val format: OFormat[CallbackFields] = Json.format[CallbackFields]
 }
 
 case class BatchFile(
@@ -82,7 +91,7 @@ case class BatchFile(
 )
 
 object BatchFile {
-  implicit val urlFormat:Format[URL] = HttpUrlFormat
+  implicit val urlFormat: HttpUrlFormat.type = HttpUrlFormat
   implicit val format: OFormat[BatchFile] = Json.format[BatchFile]
 }
 

@@ -19,11 +19,8 @@ package util.externalservices
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
-import play.api.test.Helpers.{ACCEPT, _}
-import play.mvc.Http.HeaderNames.CONTENT_TYPE
-import play.mvc.Http.MimeTypes.JSON
+import play.api.test.Helpers._
 import uk.gov.hmrc.customs.declaration.model.filetransmission.FileTransmission
-import uk.gov.hmrc.http.HeaderCarrier
 import util.CustomsDeclarationsExternalServicesConfig._
 import util.WireMockRunner
 
@@ -32,10 +29,6 @@ import scala.jdk.CollectionConverters._
 
 trait FileTransmissionService extends WireMockRunner {
   private val urlMatchingRequestPath = urlMatching(FileTransmissionContext)
-
-  private implicit val hc: HeaderCarrier = HeaderCarrier(
-    extraHeaders = Seq(ACCEPT -> JSON, CONTENT_TYPE -> JSON) // http-verbs will implicitly add user agent header
-  )
 
   def startFileTransmissionService(): Unit = {
     setupFileTransmissionToReturn(NO_CONTENT)
@@ -50,14 +43,14 @@ trait FileTransmissionService extends WireMockRunner {
     verify(1, postRequestedFor(urlMatchingRequestPath))
     val req = findAll(postRequestedFor(urlMatchingRequestPath)).get(0)
     val keys: List[String] = List.concat(req.getHeaders.keys().asScala)
-    (Map(keys map { s => (s, req.getHeader(s)) }: _*), req.getBodyAsString)
+    (Map(keys map { s => (s, req.getHeader(s)) }*), req.getBodyAsString)
   }
 
   def verifyFileTransmissionServiceWasCalledWith(request: FileTransmission): Unit = {
     verify(
       1,
       postRequestedFor(urlMatchingRequestPath)
-      .withHeader(USER_AGENT, equalTo("tdr-customs-declarations"))
+      .withHeader(USER_AGENT, equalTo("customs-declarations"))
       .withHeader(ACCEPT, equalTo(JSON))
       .withRequestBody(equalToJson(Json.toJson(request).toString))
     )
@@ -67,7 +60,7 @@ trait FileTransmissionService extends WireMockRunner {
     verify(
       1,
       postRequestedFor(urlMatchingRequestPath)
-      .withHeader(USER_AGENT, equalTo("tdr-customs-declarations"))
+      .withHeader(USER_AGENT, equalTo("customs-declarations"))
       .withHeader(ACCEPT, equalTo(JSON))
     )
   }

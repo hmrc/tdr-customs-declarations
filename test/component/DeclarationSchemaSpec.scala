@@ -39,6 +39,7 @@ class DeclarationSchemaSpec extends ComponentTestSpec
     ApiSubscriptionKey(clientId = clientId, context = "customs%2Fdeclarations", version = VersionOne)
   private val apiSubscriptionKeyForXClientIdV2 = apiSubscriptionKeyForXClientIdV1.copy(version = VersionTwo)
 
+
   override protected def beforeAll(): Unit = {
     startMockServer()
     stubAuditService()
@@ -60,7 +61,8 @@ class DeclarationSchemaSpec extends ComponentTestSpec
       val result: Future[Result] = route(app = app, request).value
 
       Then(s"a response with a 202 status is received")
-      contentAsString(result) should be(empty)
+      contentAsString(result) should be (empty)
+
       status(result) shouldBe ACCEPTED
       headers(result).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
     }
@@ -77,7 +79,7 @@ class DeclarationSchemaSpec extends ComponentTestSpec
 
       Then("a response with a 202 (ACCEPTED) status is received")
       status(result) shouldBe ACCEPTED
-      contentAsString(result) should be(empty)
+      contentAsString(result) should be (empty)
     }
 
     Scenario("Response status 202 when authorised as CSP with privileged application and submits type code INV in the request") {
@@ -104,7 +106,7 @@ class DeclarationSchemaSpec extends ComponentTestSpec
 
       Then("a response with a 202 (ACCEPTED) status is received")
       status(result) shouldBe ACCEPTED
-      contentAsString(result) should be(empty)
+      contentAsString(result) should be (empty)
     }
 
 
@@ -116,7 +118,9 @@ class DeclarationSchemaSpec extends ComponentTestSpec
       val result: Future[Result] = route(app = app, request).value
 
       Then(s"a response with a 202 status is received")
-      contentAsString(result) should be(empty)
+      contentAsString(result) should be (empty)
+
+
       status(result) shouldBe ACCEPTED
       headers(result).get(X_CONVERSATION_ID_NAME).value should include(conversationIdValue)
     }
