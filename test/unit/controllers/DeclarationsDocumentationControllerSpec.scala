@@ -51,7 +51,7 @@ class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar
          |{
          |   "api":{
          |      "name":"TDR Customs Declarations",
-         |      "description":"Single WCO-compliant Customs Declarations API",
+         |      "description":"Single WCO-compliant Customs Declarations API for TDR",
          |      "context":"tdr/customs/declarations",
          |      "versions":[
          |         {
