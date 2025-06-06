@@ -50,7 +50,7 @@ trait FileTransmissionService extends WireMockRunner {
     verify(
       1,
       postRequestedFor(urlMatchingRequestPath)
-      .withHeader(USER_AGENT, equalTo("customs-declarations"))
+      .withHeader(USER_AGENT, equalTo("tdr-customs-declarations"))
       .withHeader(ACCEPT, equalTo(JSON))
       .withRequestBody(equalToJson(Json.toJson(request).toString))
     )
@@ -60,7 +60,7 @@ trait FileTransmissionService extends WireMockRunner {
     verify(
       1,
       postRequestedFor(urlMatchingRequestPath)
-      .withHeader(USER_AGENT, equalTo("customs-declarations"))
+      .withHeader(USER_AGENT, equalTo("tdr-customs-declarations"))
       .withHeader(ACCEPT, equalTo(JSON))
     )
   }
