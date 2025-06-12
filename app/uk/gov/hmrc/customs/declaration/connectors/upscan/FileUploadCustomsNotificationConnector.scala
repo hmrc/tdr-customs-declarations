@@ -17,38 +17,47 @@
 package uk.gov.hmrc.customs.declaration.connectors.upscan
 
 import com.google.inject.{Inject, Singleton}
-import play.mvc.Http.HeaderNames._
+import play.mvc.Http.HeaderNames.*
 import play.mvc.Http.MimeTypes
+import uk.gov.hmrc.customs.declaration.connectors.HeaderUtil
 import uk.gov.hmrc.customs.declaration.http.Non2xxResponseException
 import uk.gov.hmrc.customs.declaration.logging.CdsLogger
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
 import uk.gov.hmrc.customs.declaration.services.upscan.FileUploadCustomsNotification
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpErrorFunctions, HttpException, HttpResponse}
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpErrorFunctions, HttpException, HttpResponse, StringContextOps}
+
+import scala.util.control.NonFatal
+import play.api.libs.ws.writeableOf_String
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileUploadCustomsNotificationConnector @Inject()(http: HttpClient,
+class FileUploadCustomsNotificationConnector @Inject()(http: HttpClientV2,
                                                        logger: CdsLogger,
                                                        config: DeclarationsConfigService)
-                                                      (implicit ec: ExecutionContext) extends HttpErrorFunctions {
+                                                      (implicit ec: ExecutionContext) extends HttpErrorFunctions with HeaderUtil {
 
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
   private val XMLHeader = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"""
 
-  def send(notification: FileUploadCustomsNotification): Future[Unit] = {
+  def send(notification: FileUploadCustomsNotification)(implicit hc: HeaderCarrier): Future[Unit] = {
 
-    val headers: Map[String, String] = Map(
-      "X-CDS-Client-ID" -> notification.clientSubscriptionId.toString,
-      "X-Conversation-ID" -> notification.conversationId.toString,
-      CONTENT_TYPE -> s"${MimeTypes.XML}; charset=UTF-8",
-      ACCEPT -> MimeTypes.XML,
-      AUTHORIZATION -> s"Basic ${config.declarationsConfig.customsNotificationBearerToken}")
+    val headers: Seq[(String, String)] = Seq(
+      ("X-CDS-Client-ID", notification.clientSubscriptionId.toString),
+      ("X-Conversation-ID", notification.conversationId.toString),
+      (CONTENT_TYPE, s"${MimeTypes.XML}; charset=UTF-8"),
+      (ACCEPT, MimeTypes.XML),
+      (AUTHORIZATION, s"Basic ${config.declarationsConfig.customsNotificationBearerToken}")
+    ) ++ getCustomsApiStubExtraHeaders
 
     val url = config.declarationsConfig.customsNotificationBaseBaseUrl
 
-    http.POSTString[HttpResponse](url, XMLHeader + notification.payload.toString(), headers.toSeq).map { response =>
+    http.post(url"$url")
+      .setHeader(headers*)
+      .withBody(XMLHeader + notification.payload.toString)
+      .execute[HttpResponse]
+      .map { response =>
       response.status match {
         case status if is2xx(status) =>
           logger.info(s"[conversationId=${notification.conversationId}][clientSubscriptionId=${notification.clientSubscriptionId}]: notification sent successfully. url=${config.declarationsConfig.customsNotificationBaseBaseUrl}")
@@ -63,7 +72,7 @@ class FileUploadCustomsNotificationConnector @Inject()(http: HttpClient,
         logger.error(s"Call to customs notification service failed. url=$url, HttpStatus=${httpError.responseCode}, Error=${httpError.message}")
         Future.failed(new RuntimeException(httpError))
 
-      case e: Throwable =>
+      case NonFatal(e) =>
         logger.error(s"[conversationId=${notification.conversationId}][clientSubscriptionId=${notification.clientSubscriptionId}]: Call to customs notification failed. url=${config.declarationsConfig.customsNotificationBaseBaseUrl}")
         Future.failed(e)
     }

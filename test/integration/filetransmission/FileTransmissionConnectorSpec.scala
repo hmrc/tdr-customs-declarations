@@ -25,9 +25,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContentAsXml
-import play.api.test.Helpers.{ACCEPT, BAD_REQUEST, INTERNAL_SERVER_ERROR, MULTIPLE_CHOICES, NOT_FOUND}
-import play.mvc.Http.HeaderNames.CONTENT_TYPE
-import play.mvc.Http.MimeTypes.JSON
+import play.api.test.Helpers.{BAD_REQUEST, INTERNAL_SERVER_ERROR, MULTIPLE_CHOICES, NOT_FOUND}
 import uk.gov.hmrc.customs.declaration.connectors.filetransmission.FileTransmissionConnector
 import uk.gov.hmrc.customs.declaration.http.Non2xxResponseException
 import uk.gov.hmrc.customs.declaration.logging.{CdsLogger, DeclarationsLogger}
@@ -90,7 +88,7 @@ class FileTransmissionConnectorSpec extends IntegrationTestSpec with GuiceOneApp
 
       intercept[RuntimeException](await(sendValidRequest())).getCause.getClass shouldBe classOf[Non2xxResponseException]
 
-      verifyDeclarationsLoggerError("Call to file transmission failed. url=http://localhost:11111/file/transmission, HttpStatus=300, Error=Received a non 2XX response")
+      verifyDeclarationsLoggerError(s"Call to file transmission failed. url=http://localhost:$Port/file/transmission, HttpStatus=300, Error=Received a non 2XX response")
     }
 
     "return a failed future when external service returns 404" in {
@@ -98,7 +96,7 @@ class FileTransmissionConnectorSpec extends IntegrationTestSpec with GuiceOneApp
 
       intercept[RuntimeException](await(sendValidRequest())).getCause.getClass shouldBe classOf[Non2xxResponseException]
 
-      verifyDeclarationsLoggerError("Call to file transmission failed. url=http://localhost:11111/file/transmission, HttpStatus=404, Error=Received a non 2XX response")
+      verifyDeclarationsLoggerError(s"Call to file transmission failed. url=http://localhost:$Port/file/transmission, HttpStatus=404, Error=Received a non 2XX response")
     }
 
     "return a failed future when external service returns 400" in {
@@ -106,7 +104,7 @@ class FileTransmissionConnectorSpec extends IntegrationTestSpec with GuiceOneApp
 
       intercept[RuntimeException](await(sendValidRequest())).getCause.getClass shouldBe classOf[Non2xxResponseException]
 
-      verifyDeclarationsLoggerError("Call to file transmission failed. url=http://localhost:11111/file/transmission, HttpStatus=400, Error=Received a non 2XX response")
+      verifyDeclarationsLoggerError(s"Call to file transmission failed. url=http://localhost:$Port/file/transmission, HttpStatus=400, Error=Received a non 2XX response")
     }
 
     "return a failed future when external service returns 500" in {
@@ -114,7 +112,7 @@ class FileTransmissionConnectorSpec extends IntegrationTestSpec with GuiceOneApp
 
       intercept[RuntimeException](await(sendValidRequest())).getCause.getClass shouldBe classOf[Non2xxResponseException]
 
-      verifyDeclarationsLoggerError("Call to file transmission failed. url=http://localhost:11111/file/transmission, HttpStatus=500, Error=Received a non 2XX response")
+      verifyDeclarationsLoggerError(s"Call to file transmission failed. url=http://localhost:$Port/file/transmission, HttpStatus=500, Error=Received a non 2XX response")
     }
 
     "return a failed future when fail to connect the external service" in {
@@ -122,18 +120,15 @@ class FileTransmissionConnectorSpec extends IntegrationTestSpec with GuiceOneApp
 
       intercept[RuntimeException](await(sendValidRequest())).getCause.getClass shouldBe classOf[BadGatewayException]
 
-      verifyDeclarationsLoggerError(s"Call to file transmission failed. url=http://localhost:11111/file/transmission, HttpStatus=502, Error=POST of 'http://localhost:11111/file/transmission' failed. Caused by: 'Connection refused: localhost/$localhostString:11111'")
+      verifyDeclarationsLoggerError(s"Call to file transmission failed. url=http://localhost:$Port/file/transmission, HttpStatus=502, Error=POST of 'http://localhost:$Port/file/transmission' failed. Caused by: 'Connection refused: localhost/$localhostString:$Port'")
 
       startMockServer()
     }
 
   }
 
-  private implicit val hc: HeaderCarrier = HeaderCarrier(
-    extraHeaders = Seq(ACCEPT -> JSON, CONTENT_TYPE -> JSON) // http-verbs will implicitly add user agent header
-  )
-
   private def sendValidRequest() = {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
     connector.send(FileTransmissionRequest)
   }
 }

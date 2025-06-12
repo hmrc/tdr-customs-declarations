@@ -46,6 +46,7 @@ class FileUploadUpscanNotificationControllerSpec extends PlaySpec with MockitoSu
 
   trait SetUp {
     implicit val ec: ExecutionContext = Helpers.stubControllerComponents().executionContext
+    implicit val hc: HeaderCarrier = HeaderCarrier()
     val mockNotificationService: FileUploadNotificationService = mock[FileUploadNotificationService]
     val mockToXmlNotification: UpscanNotificationCallbackToXmlNotification = mock[UpscanNotificationCallbackToXmlNotification]
     val mockErrorToXmlNotification: InternalErrorXmlNotification = mock[InternalErrorXmlNotification]
@@ -68,7 +69,7 @@ class FileUploadUpscanNotificationControllerSpec extends PlaySpec with MockitoSu
         ameq(FailedCallbackBody),
         ameq[UUID](FileReferenceOne.value).asInstanceOf[FileReference],
         ameq[UUID](subscriptionFieldsId.value).asInstanceOf[SubscriptionFieldsId])
-      (ameq(mockToXmlNotification))
+      (ameq(mockToXmlNotification), any[HeaderCarrier])
       ).thenReturn(result)
     }
 
@@ -78,7 +79,7 @@ class FileUploadUpscanNotificationControllerSpec extends PlaySpec with MockitoSu
       verify(mockNotificationService).sendMessage(
         ameq(callbackBody),
         ameq[UUID](fileReference.value).asInstanceOf[FileReference],
-        ameq[UUID](csid.value).asInstanceOf[SubscriptionFieldsId])(ameq(mockToXmlNotification))
+        ameq[UUID](csid.value).asInstanceOf[SubscriptionFieldsId])(ameq(mockToXmlNotification), any[HeaderCarrier])
     }
 
     def verifyErrorNotificationSent(fileReference: FileReference = FileReferenceOne,
@@ -86,7 +87,7 @@ class FileUploadUpscanNotificationControllerSpec extends PlaySpec with MockitoSu
       verify(mockNotificationService).sendMessage(
         ameq(fileReference),
         ameq[UUID](fileReference.value).asInstanceOf[FileReference],
-        ameq[UUID](csid.value).asInstanceOf[SubscriptionFieldsId])(ameq(mockErrorToXmlNotification))
+        ameq[UUID](csid.value).asInstanceOf[SubscriptionFieldsId])(ameq(mockErrorToXmlNotification), any[HeaderCarrier])
     }
   }
 

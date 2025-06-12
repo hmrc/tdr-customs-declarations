@@ -21,7 +21,7 @@
         <!--Function Code of 9 to represent an original declaration. -->
         <FunctionCode>9</FunctionCode>
         <!-- DE 2/5: Trader's own reference number - this must be unique to the transaction. -->
-        <FunctionalReferenceID>7849431MDXMP</FunctionalReferenceID>
+        <FunctionalReferenceID>U.78494317G9N3</FunctionalReferenceID>
         <!--DE 1/1: IM to represent an import declaration. -->
         <!--DE 1/2: A to represent a standard frontier declaration. -->
         <TypeCode>IMA</TypeCode>
@@ -175,13 +175,18 @@
                     <Description>Tungsten bars for welding electrodes, containing 95% by weight of tungsten, 5 metres in length. Consigned from Thailand</Description>
                     <Classification>
                         <!--DE 6/14: Commodity code - combined nomenclature code. -->
-                        <ID>81019910</ID>
+                        <ID>76071119</ID>
                         <IdentificationTypeCode>TSP</IdentificationTypeCode>
                     </Classification>
                     <Classification>
                         <!--DE 6/15: Commodity code - The TARIC code (two characters for the application of specific Union measures in respect of formalities to be completed at destination). -->
-                        <ID>12</ID>
+                        <ID>10</ID>
                         <IdentificationTypeCode>TRC</IdentificationTypeCode>
+                    </Classification>
+                    <Classification>
+                        <!--DE 6/15: Commodity code - The TARIC code (two characters for the application of specific Union measures in respect of formalities to be completed at destination). -->
+                        <ID>C601</ID>
+                        <IdentificationTypeCode>TRA</IdentificationTypeCode>
                     </Classification>
                     <DutyTaxFee>
                         <!--DE 4/17: Preference Type of 100 represents no preference being claimed.-->

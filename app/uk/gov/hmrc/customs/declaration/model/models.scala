@@ -40,7 +40,13 @@ case class NrSubmissionId(nrSubmissionId: UUID) extends AnyVal {
 }
 
 object NrSubmissionId {
-  implicit val format: OFormat[NrSubmissionId] = Json.format[NrSubmissionId]
+  implicit val format: Format[NrSubmissionId] = new Format[NrSubmissionId]:
+    override def writes(o: NrSubmissionId): JsValue = JsString(o.nrSubmissionId.toString)
+
+    override def reads(json: JsValue): JsResult[NrSubmissionId] = json.validate[String].map { str =>
+      NrSubmissionId(UUID.fromString(str))
+    }
+
 }
 
 case class NrsRetrievalData(internalId: Option[String],
@@ -92,10 +98,6 @@ case class Mrn(value: String) extends AnyVal {
 }
 
 case class CorrelationId(uuid: UUID) extends AnyVal {
-  override def toString: String = uuid.toString
-}
-
-case class DeclarationManagementInformationRequestId(uuid: UUID) extends AnyVal {
   override def toString: String = uuid.toString
 }
 
@@ -217,7 +219,6 @@ object NrsPayload {
 
 private object NotAvailable { val na = Some("NOT AVAILABLE") }
 
-case class DeclarationStatusResponse(declaration: Declaration)
 case class Declaration(versionNumber: Option[String] = NotAvailable.na, creationDate: Option[String] = NotAvailable.na, acceptanceDate: Option[String] = NotAvailable.na,  tradeMovementType: Option[String] = NotAvailable.na,  `type`: Option[String] = NotAvailable.na,  parties: Parties, goodsItemCount: Option[String] = NotAvailable.na,  packageCount: Option[String] = NotAvailable.na)
 case class Parties(partyIdentification: PartyIdentification)
 case class PartyIdentification(number: Option[String] = NotAvailable.na)
@@ -225,4 +226,3 @@ case class PartyIdentification(number: Option[String] = NotAvailable.na)
 object PartyIdentification { implicit val format: OFormat[PartyIdentification] = Json.format[PartyIdentification] }
 object Parties { implicit val format: OFormat[Parties] = Json.format[Parties] }
 object Declaration { implicit val format: OFormat[Declaration] = Json.format[Declaration] }
-object DeclarationStatusResponse { implicit val format: OFormat[DeclarationStatusResponse] = Json.format[DeclarationStatusResponse] }

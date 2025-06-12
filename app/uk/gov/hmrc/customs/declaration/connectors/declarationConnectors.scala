@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.customs.declaration.connectors
 
-import com.google.inject._
+import com.google.inject.*
 import org.apache.pekko.actor.ActorSystem
-import play.api.http.HeaderNames._
+import play.api.http.HeaderNames.*
 import play.api.http.{ContentTypes, MimeTypes}
 import play.api.mvc.Codec.utf_8
 import uk.gov.hmrc.customs.declaration.config.{DeclarationCircuitBreaker, ServiceConfigProvider}
@@ -27,8 +27,10 @@ import uk.gov.hmrc.customs.declaration.logging.{CdsLogger, DeclarationsLogger}
 import uk.gov.hmrc.customs.declaration.model.ApiVersion
 import uk.gov.hmrc.customs.declaration.model.actionbuilders.ValidatedPayloadRequest
 import uk.gov.hmrc.customs.declaration.services.DeclarationsConfigService
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, HttpErrorFunctions, HttpException, HttpResponse, StringContextOps}
+import play.api.libs.ws.writeableOf_String
 
 import java.time.{Instant, LocalDateTime}
 import java.util.UUID
@@ -37,7 +39,7 @@ import scala.util.control.NonFatal
 import scala.xml.NodeSeq
 
 @Singleton
-class DeclarationSubmissionConnector @Inject()(override val http: HttpClient,
+class DeclarationSubmissionConnector @Inject()(override val http: HttpClientV2,
                                                override val logger: DeclarationsLogger,
                                                override val serviceConfigProvider: ServiceConfigProvider,
                                                override val config: DeclarationsConfigService,
@@ -50,7 +52,7 @@ class DeclarationSubmissionConnector @Inject()(override val http: HttpClient,
 }
 
 @Singleton
-class DeclarationCancellationConnector @Inject()(override val http: HttpClient,
+class DeclarationCancellationConnector @Inject()(override val http: HttpClientV2,
                                                  override val logger: DeclarationsLogger,
                                                  override val serviceConfigProvider: ServiceConfigProvider,
                                                  override val config: DeclarationsConfigService,
@@ -64,7 +66,7 @@ class DeclarationCancellationConnector @Inject()(override val http: HttpClient,
 
 trait DeclarationConnector extends DeclarationCircuitBreaker with HttpErrorFunctions with HeaderUtil {
 
-  def http: HttpClient
+  def http: HttpClientV2
 
   def logger: DeclarationsLogger
 
@@ -72,26 +74,15 @@ trait DeclarationConnector extends DeclarationCircuitBreaker with HttpErrorFunct
 
   def config: DeclarationsConfigService
 
-  override lazy val numberOfCallsToTriggerStateChange = config.declarationsCircuitBreakerConfig.numberOfCallsToTriggerStateChange
-  override lazy val unstablePeriodDurationInMillis = config.declarationsCircuitBreakerConfig.unstablePeriodDurationInMillis
-  override lazy val unavailablePeriodDurationInMillis = config.declarationsCircuitBreakerConfig.unavailablePeriodDurationInMillis
-
-  private val headersList = Some(List("Accept", "Gov-Test-Scenario", "X-Correlation-ID"))
-
-  private def apiStubHeaderCarrier()(implicit hc: HeaderCarrier): HeaderCarrier = {
-    HeaderCarrier(
-      extraHeaders = hc.extraHeaders ++
-
-        // Other headers (i.e Gov-Test-Scenario, Content-Type)
-        hc.headers(headersList.getOrElse(Seq.empty))
-    )
-  }
+  override val numberOfCallsToTriggerStateChange: Int = config.declarationsCircuitBreakerConfig.numberOfCallsToTriggerStateChange
+  override val unstablePeriodDurationInMillis: Int = config.declarationsCircuitBreakerConfig.unstablePeriodDurationInMillis
+  override val unavailablePeriodDurationInMillis: Int = config.declarationsCircuitBreakerConfig.unavailablePeriodDurationInMillis
 
   def send[A](xml: NodeSeq, date: Instant, correlationId: UUID, apiVersion: ApiVersion)(implicit vpr: ValidatedPayloadRequest[A], hc: HeaderCarrier): Future[HttpResponse] = {
     val config = Option(serviceConfigProvider.getConfig(s"${apiVersion.configPrefix}$configKey")).getOrElse(throw new IllegalArgumentException("config not found"))
     val bearerToken = "Bearer " + config.bearerToken.getOrElse(throw new IllegalStateException("no bearer token was found in config"))
 
-    lazy val decHeaders: Seq[(String, String)] = getHeaders(date, correlationId) ++ Seq(HeaderNames.authorisation -> bearerToken) ++ hc.headers(headersList.getOrElse(Seq.empty))
+    val decHeaders = getHeaders(date, correlationId) ++ Seq(HeaderNames.authorisation -> bearerToken) ++ getCustomsApiStubExtraHeaders(hc)
     val startTime = LocalDateTime.now
     withCircuitBreaker(post(xml, config.url, decHeaders)).map {
       response => {
@@ -111,10 +102,11 @@ trait DeclarationConnector extends DeclarationCircuitBreaker with HttpErrorFunct
       ("X-Correlation-ID", correlationId.toString))
   }
 
-  private def post[A](xml: NodeSeq, url: String, decHeaders: Seq[(String, String)])(implicit vpr: ValidatedPayloadRequest[A], hc: HeaderCarrier) = {
-    logger.debug(s"Sending request to $url.\n Headers:\n $hc\n Payload:\n$xml")
+  private def post[A](xml: NodeSeq, url: String, decHeaders: Seq[(String, String)])(implicit vpr: ValidatedPayloadRequest[A]) = {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    logger.debug(s"Sending request to $url.\n Headers:\n $decHeaders\n Payload:\n$xml")
 
-    http.POSTString[HttpResponse](url, xml.toString(), headers = decHeaders)(implicitly,hc=apiStubHeaderCarrier(),implicitly).map { response =>
+    http.post(url"$url").setHeader(decHeaders*).withBody(xml.toString).execute[HttpResponse].map { response =>
       response.status match {
         case status if is2xx(status) =>
           response

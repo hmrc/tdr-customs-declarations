@@ -5,6 +5,7 @@
     <md:ResponsibleAgencyName>HMRC</md:ResponsibleAgencyName>
     <md:AgencyAssignedCustomizationVersionCode>v2.1</md:AgencyAssignedCustomizationVersionCode>
     <Declaration xmlns:clm5ISO42173A="urn:un:unece:uncefact:codelist:standard:ISO:ISO3AlphaCurrencyCode:2012-08-31" xmlns:p1="urn:wco:datamodel:WCO:Declaration_DS:DMS:2" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:6" xsi:schemaLocation="urn:wco:datamodel:WCO:DEC-DMS:2 ../WCO_DEC_2_DMS.xsd ">
+
         <!--
             Please note this scenario is currently not working as expected, and will be fixed in a future release.
             SCENARIO
@@ -23,7 +24,7 @@
         <FunctionCode>9</FunctionCode>
         <!--DE 2/5: LRN.
             Declarant's own reference number: this must be unique to the transaction. -->
-        <FunctionalReferenceID>78494319MNY4</FunctionalReferenceID>
+        <FunctionalReferenceID>U.7847323Q4CP7</FunctionalReferenceID>
         <!--DE 1/1: Declaration Type.
             IM to represent an import declaration. -->
         <!--DE 1/2: Additional Declaration Type.
@@ -207,6 +208,16 @@
                     <TypeCode>120</TypeCode>
                     <LPCOExemptionCode>AC</LPCOExemptionCode>
                 </AdditionalDocument>
+                <!--DE 2/3: Documents produced, certificates and authorisations, additional references.
+                    A document code of Y100 indicates: Special entries on the import licence AGRIM.
+                    Document code of AC in this scenario indicates Document attached for certification by customs. -->
+                <AdditionalDocument>
+                    <CategoryCode>Y</CategoryCode>
+                    <ID>GBAHC987654</ID>
+                    <Name>QUOTA</Name>
+                    <TypeCode>100</TypeCode>
+                    <LPCOExemptionCode>AC</LPCOExemptionCode>
+                </AdditionalDocument>
                 <!--DE 2/2: Additional Information.
                     This field is mandatory, this represents goods are Imported from ROW into Northern Ireland. -->
                 <AdditionalInformation>
@@ -254,7 +265,7 @@
                         <DutyRegimeCode>120</DutyRegimeCode>
                         <!--DE 8/1: Quota number.
                             ID indicates Quota claimed: 0 percent duty rate (security only required for critical quota claim). -->
-                        <QuotaOrderID>054067</QuotaOrderID>
+                        <QuotaOrderID>054077</QuotaOrderID>
                     </DutyTaxFee>
                     <GoodsMeasure>
                         <!--DE 6/5: Gross Mass.
@@ -364,7 +375,7 @@
             <!--DE 8/3: Guarantee Reference.
                 Where document code C505 is declared in DE 2/3 (Document Codes) and authorisation type code is declared in DE 3/39 (Holder of the Authorisation), then this data element is mandatory. -->
             <ID>XICGU55320273485220231019133850</ID>
-            <!--DE 8/2: Guarantee Type and Cash Accounts. 
+            <!--DE 8/2: Guarantee Type and Cash Accounts.
                 1 to represent that a customs comprehensive Guarantee is NOT being waived for the deferment of customs duty.
                 Where document code C505 is declared in DE 2/3 (Document Codes) and authorisation type code CGU is declared in DE 3/39 (Holder of the Authorisation), then code '0' or '1' must be declared in this data element. -->
             <SecurityDetailsCode>1</SecurityDetailsCode>

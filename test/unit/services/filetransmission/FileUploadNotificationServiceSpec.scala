@@ -34,6 +34,7 @@ import uk.gov.hmrc.customs.declaration.model.filetransmission.{FileTransmissionF
 import uk.gov.hmrc.customs.declaration.model.upscan.{BatchId, FileReference}
 import uk.gov.hmrc.customs.declaration.repo.FileUploadMetadataRepo
 import uk.gov.hmrc.customs.declaration.services.upscan.{CallbackToXmlNotification, FileUploadCustomsNotification, FileUploadNotificationService}
+import uk.gov.hmrc.http.HeaderCarrier
 import unit.services.filetransmission
 import unit.services.filetransmission.ExampleFileTransmissionStatus.ExampleFileTransmissionStatus
 import util.ApiSubscriptionFieldsTestData.subscriptionFieldsId
@@ -83,7 +84,7 @@ class FileUploadNotificationServiceSpec extends AnyWordSpecLike with MockitoSuga
 
     private[FileUploadNotificationServiceSpec] def verifyNotificationConnectorCalledWithXml(xml: NodeSeq): Assertion = {
       val captor: ArgumentCaptor[FileUploadCustomsNotification] = ArgumentCaptor.forClass(classOf[FileUploadCustomsNotification])
-      verify(mockNotificationConnector).send(captor.capture())
+      verify(mockNotificationConnector).send(captor.capture())(any[HeaderCarrier])
       val actual: FileUploadCustomsNotification = captor.getValue
       actual.clientSubscriptionId shouldBe subscriptionFieldsId
       actual.conversationId shouldBe FileReferenceOne.value
@@ -98,6 +99,7 @@ class FileUploadNotificationServiceSpec extends AnyWordSpecLike with MockitoSuga
 
     private[FileUploadNotificationServiceSpec] implicit val toXml: CallbackToXmlNotification[FileTransmissionNotification] =
       new uk.gov.hmrc.customs.declaration.services.filetransmission.FileTransmissionCallbackToXmlNotification()
+    private[FileUploadNotificationServiceSpec] implicit val hc: HeaderCarrier = HeaderCarrier()
   }
 
   private val successCallbackPayload: FileTransmissionNotification =
@@ -108,16 +110,16 @@ class FileUploadNotificationServiceSpec extends AnyWordSpecLike with MockitoSuga
 
   "FileUploadNotificationService" should {
     "send SUCCESS notification to the customs notification service" in new SetUp {
-      when(mockNotificationConnector.send(any[FileUploadCustomsNotification])).thenReturn(Future.successful(()))
+      when(mockNotificationConnector.send(any[FileUploadCustomsNotification])(any[HeaderCarrier])).thenReturn(Future.successful(()))
       when(mockFileUploadMetadataRepo.fetch(fileRefEq(FileReferenceOne))(any[HasConversationId])).thenReturn(Future.successful(Some(FileMetadataWithFileOne)))
 
-      (service.sendMessage(successCallbackPayload, successCallbackPayload.fileReference, subscriptionFieldsId)(toXml)).futureValue
+      (service.sendMessage(successCallbackPayload, successCallbackPayload.fileReference, subscriptionFieldsId)(toXml, this.hc)).futureValue
 
       verifyNotificationConnectorCalledWithXml(expectedSuccessXml)
     }
 
     "send FAILURE notification to the customs notification service" in new SetUp {
-      when(mockNotificationConnector.send(any[FileUploadCustomsNotification])).thenReturn(Future.successful(()))
+      when(mockNotificationConnector.send(any[FileUploadCustomsNotification])(any[HeaderCarrier])).thenReturn(Future.successful(()))
       when(mockFileUploadMetadataRepo.fetch(fileRefEq(FileReferenceOne))(any[HasConversationId])).thenReturn(Future.successful(None))
 
       (service.sendMessage(failureCallbackPayload, successCallbackPayload.fileReference, subscriptionFieldsId)).futureValue

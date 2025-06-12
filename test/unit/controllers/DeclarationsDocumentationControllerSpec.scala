@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import uk.gov.hmrc.customs.declaration.controllers.DeclarationsDocumentationController
+import uk.gov.hmrc.customs.declaration.controllers.documentationController.DeclarationsDocumentationController
 import uk.gov.hmrc.customs.declaration.logging.DeclarationsLogger
 
 class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar with Results with BeforeAndAfterEach {
@@ -49,13 +49,6 @@ class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar
     Json.parse(
       """
          |{
-         |   "scopes":[
-         |      {
-         |         "key":"write:customs-declaration",
-         |         "name":"Submit a Customs Declaration",
-         |         "description":"Submit a Customs Declaration"
-         |      }
-         |   ],
          |   "api":{
          |      "name":"TDR Customs Declarations",
          |      "description":"Single WCO-compliant Customs Declarations API for TDR",

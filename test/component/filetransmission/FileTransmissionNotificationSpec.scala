@@ -18,6 +18,7 @@ package component.filetransmission
 
 import component.{ComponentTestSpec, ExpectedTestResponses}
 import org.mongodb.scala.model.Filters
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
@@ -52,7 +53,7 @@ class FileTransmissionNotificationSpec extends ComponentTestSpec with ExpectedTe
 
   private val endpoint = s"/file-transmission-notify/clientSubscriptionId/$subscriptionFieldsIdString"
 
-  val repo = app.injector.instanceOf[FileUploadMetadataMongoRepo]
+  val repo: FileUploadMetadataMongoRepo = app.injector.instanceOf[FileUploadMetadataMongoRepo]
 
   private val schemaFileUploadNotificationLocationV1: Schema = ValidateXmlAgainstSchema.getSchema(xsdFileUploadNotificationLocationV1).get
 
@@ -110,7 +111,7 @@ class FileTransmissionNotificationSpec extends ComponentTestSpec with ExpectedTe
       And("The Accept header is application/xml")
       requestHeaders.get(ACCEPT) shouldBe Some("application/xml")
 
-      And("The User-Agent header is tdr-customs-declarations")
+      And("The User-Agent header is customs-declarations")
       requestHeaders.get(USER_AGENT) shouldBe Some("tdr-customs-declarations")
 
       And("The request XML payload contains details of the scan outcome")
