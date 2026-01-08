@@ -54,7 +54,7 @@ class DefinitionSpecWithAllVersionsEnabledByDefault extends ComponentTestSpec wi
           |    "versions": [
           |      {
           |        "version": "1.0",
-          |        "status": "BETA",
+          |        "status": "RETIRED",
           |        "endpointsEnabled": true,
           |        "access": {
           |          "type": "PRIVATE"
@@ -91,7 +91,7 @@ class DefinitionSpecWithAllVersionsEnabledByDefault extends ComponentTestSpec wi
           |      },
           |      {
           |        "version": "2.0",
-          |        "status": "BETA",
+          |        "status": "RETIRED",
           |        "endpointsEnabled": true,
           |        "access": {
           |          "type": "PRIVATE"
@@ -128,7 +128,7 @@ class DefinitionSpecWithAllVersionsEnabledByDefault extends ComponentTestSpec wi
           |      },
           |      {
           |        "version": "3.0",
-          |        "status": "BETA",
+          |        "status": "RETIRED",
           |        "endpointsEnabled": true,
           |        "access": {
           |          "type": "PRIVATE"
@@ -202,7 +202,7 @@ class DefinitionSpecWithVersion2Disabled extends ComponentTestSpec with Matchers
           |    "versions": [
           |      {
           |        "version": "1.0",
-          |        "status": "BETA",
+          |        "status": "RETIRED",
           |        "endpointsEnabled": true,
           |        "access": {
           |          "type": "PRIVATE"
@@ -239,7 +239,7 @@ class DefinitionSpecWithVersion2Disabled extends ComponentTestSpec with Matchers
           |      },
           |      {
           |        "version": "2.0",
-          |        "status": "BETA",
+          |        "status": "RETIRED",
           |        "endpointsEnabled": false,
           |        "access": {
           |          "type": "PRIVATE"
@@ -276,7 +276,7 @@ class DefinitionSpecWithVersion2Disabled extends ComponentTestSpec with Matchers
           |      },
           |      {
           |        "version": "3.0",
-          |        "status": "BETA",
+          |        "status": "RETIRED",
           |        "endpointsEnabled": true,
           |        "access": {
           |          "type": "PRIVATE"
