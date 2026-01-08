@@ -56,7 +56,7 @@ class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar
          |      "versions":[
          |         {
          |            "version":"1.0",
-         |            "status":"BETA",
+         |            "status":"RETIRED",
          |            "endpointsEnabled":true,
          |            "access":{
          |              "type": "PRIVATE"
@@ -93,7 +93,7 @@ class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar
          |         },
          |         {
          |            "version":"2.0",
-         |            "status":"BETA",
+         |            "status":"RETIRED",
          |            "endpointsEnabled":true,
          |            "access":{
          |              "type": "PRIVATE"
@@ -130,7 +130,7 @@ class DeclarationsDocumentationControllerSpec extends PlaySpec with MockitoSugar
          |         },
          |         {
          |            "version":"3.0",
-         |            "status":"BETA",
+         |            "status":"RETIRED",
          |            "endpointsEnabled":true,
          |            "access":{
          |                "type":"PRIVATE"
